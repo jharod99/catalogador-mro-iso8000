@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNSPSC Chatbot - Experto Compras</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Estilos de la aplicación -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Panel Lateral -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    </svg>
+                </div>
+                <h2>UNSPSC Expert</h2>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="info-card">
+                    <h3>¿Cómo te ayudo?</h3>
+                    <p>Clasifico tus requerimientos de compra bajo el estándar <strong>UNSPSC</strong> y estructuro sus especificaciones técnicas comerciales.</p>
+                </div>
+                
+                <div class="info-card">
+                    <h3>Familias Especializadas</h3>
+                    <p style="font-size: 13px; line-height: 1.8;">
+                        • 🔧 <strong>Fluidos e Hidráulica</strong><br>&nbsp;&nbsp;&nbsp;&nbsp;(Tuberías, válvulas, acoples, bridas)<br>
+                        • 💻 <strong>Cómputo y TI</strong><br>&nbsp;&nbsp;&nbsp;&nbsp;(Laptops, celulares, servidores, discos)<br>
+                        • ⚡ <strong>Equipos Eléctricos</strong><br>&nbsp;&nbsp;&nbsp;&nbsp;(Motores, sensores, caudalímetros)
+                    </p>
+                </div>
+                
+                <button id="reset-btn" class="glass-btn" style="margin-top:auto;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Vaciar Carrito (Reset)
+                </button>
+            </div>
+        </aside>
+
+        <!-- Área Principal de Chat -->
+        <main class="chat-container">
+            <header class="chat-header">
+                <div>
+                    <h1>Asistente de Adquisiciones</h1>
+                    <p>Mapeo inteligente y generación de especificaciones técnicas.</p>
+                </div>
+            </header>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot slide-in">
+                    <div class="avatar bot-avatar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>👋 ¡Hola! Soy tu asistente de compras especializado. Escribe los insumos o equipos que necesitas cotizar (puedes ingresar varios a la vez, ej: <em>"Válvula de bola de 2 pulgadas y su actuador"</em>) y te ayudaré a clasificarlos y generar sus especificaciones.</p>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="chat-input-area">
+                <form id="chat-form" class="chat-form">
+                    <input 
+                        type="text" 
+                        id="user-input" 
+                        placeholder="Escribe aquí tu solicitud de compra..." 
+                        autocomplete="off"
+                        required
+                    />
+                    <button type="submit" class="send-btn" id="send-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </form>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Scripts de la aplicación -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

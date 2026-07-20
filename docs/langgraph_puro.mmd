@@ -1,0 +1,70 @@
+﻿flowchart TD
+    subgraph LangGraph_StateGraph["StateGraph — core/graph.py"]
+        direction TD
+        START(["__start__\nentrada del agente"]) --> cache
+
+        cache["cache\ncache_node(state)"]
+        cache --> route_cache{"route_cache()\nestado_global == Alta?"}
+
+        route_cache -->|"Sí\ncache hit"| END_CACHE(["__end__\nrespuesta cacheada"])
+        route_cache -->|"No\ncaché miss"| extractor
+
+        extractor["extractor\nextractor_node(state)"]
+        extractor -->|"add_edge fija"| market_verifier
+
+        market_verifier["market_verifier\nmarket_verifier_node(state)"]
+        market_verifier -->|"add_edge fija"| retriever
+
+        retriever["retriever\nretriever_node(state)"]
+        retriever -->|"add_edge fija"| decision_maker
+
+        decision_maker["decision_maker\ndecision_maker_node(state)"]
+        decision_maker --> route_decision{"route_decision()\nestado_global == Alta?"}
+
+        route_decision -->|"Sí\nAlta confianza"| generator
+        route_decision -->|"No\nAmbigüedad o Baja"| END_AMB(["__end__\npregunta aclaratoria\no rechazado"])
+
+        generator["generator\ngenerator_node(state)"]
+        generator -->|"add_edge fija"| END_OK(["__end__\ndescripción ISO 8000 generada"])
+    end
+
+    subgraph PostProcess["Post-procesamiento — clasificar_con_agente() en graph.py"]
+        direction TD
+        PP1["Lee estado_global del final_state"]
+        PP2{"estado == Rechazado?"}
+        PP3["Retorna mensaje de fuera de alcance"]
+        PP4{"estado == Alta?"}
+        PP5["guardar_en_cache(query, item)\ngolden_record.json"]
+        PP6["Retorna items con código UNSPSC\ny one_line_desc"]
+        PP7{"estado == Baja\no items vacíos?"}
+        PP8["Fallback offline\nFAISS local sin LLM"]
+        PP9["Retorna pregunta\naclaratoria al frontend"]
+
+        PP1 --> PP2
+        PP2 -->|Sí| PP3
+        PP2 -->|No| PP4
+        PP4 -->|Sí| PP5
+        PP5 --> PP6
+        PP4 -->|No| PP7
+        PP7 -->|Sí| PP8
+        PP7 -->|No| PP9
+    end
+
+    END_OK --> PP1
+    END_AMB --> PP1
+
+    style START fill:#312e81,color:#e0e0ff,stroke:#6d28d9
+    style END_CACHE fill:#14532d,color:#86efac,stroke:#22c55e
+    style END_AMB fill:#713f12,color:#fde68a,stroke:#f59e0b
+    style END_OK fill:#14532d,color:#86efac,stroke:#22c55e
+    style route_cache fill:#1e3a5f,color:#93c5fd,stroke:#3b82f6
+    style route_decision fill:#1e3a5f,color:#93c5fd,stroke:#3b82f6
+    style cache fill:#1e1b4b,color:#c4b5fd,stroke:#8b5cf6
+    style extractor fill:#1e1b4b,color:#c4b5fd,stroke:#8b5cf6
+    style market_verifier fill:#1e1b4b,color:#c4b5fd,stroke:#8b5cf6
+    style retriever fill:#1e1b4b,color:#c4b5fd,stroke:#8b5cf6
+    style decision_maker fill:#1e1b4b,color:#c4b5fd,stroke:#8b5cf6
+    style generator fill:#14532d,color:#86efac,stroke:#22c55e
+    style PP5 fill:#14532d,color:#86efac,stroke:#22c55e
+    style PP8 fill:#1e3a5f,color:#93c5fd,stroke:#3b82f6
+    style PP3 fill:#7f1d1d,color:#fca5a5,stroke:#ef4444

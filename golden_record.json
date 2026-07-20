@@ -1,0 +1,211 @@
+{
+    "tubería de pvc de 2 pulgadas, SDR 11, PN 16, material pvc": {
+        "codigo_unspsc": 40183002,
+        "nombre_producto": "Tubería de plástico pvc",
+        "nombre_clase": "Tuberías de caucho y plástico",
+        "nombre_familia": "Instalaciones de tubos y tuberías",
+        "nombre_segmento": "Componentes y Equipos para Distribución y Sistemas de Acondicionamiento",
+        "descripcion_iso": "TUBERIA PVC, SDR 11, PN16, 2 IN, PVC",
+        "sustantivo_principal": "TUBERIA",
+        "atributos_recolectados": {
+            "diametro": "2 IN",
+            "material": "PVC",
+            "sdr": "11",
+            "pn": "16",
+            "sdr_o_cedula": "SDR 11",
+            "presion_o_norma": "PN 16"
+        },
+        "categoria_dominio": "MECANICA"
+    },
+    "abrazadera de metal con perno de acero inoxidable": {
+        "codigo_unspsc": 31162904,
+        "nombre_producto": "Abrazadera de cable metálico",
+        "nombre_clase": "Mordazas",
+        "nombre_familia": "Ferretería",
+        "nombre_segmento": "Componentes y Suministros de Manufactura",
+        "descripcion_iso": "ABRAZADERA, ACERO INOXIDABLE",
+        "sustantivo_principal": "ABRAZADERA",
+        "atributos_recolectados": {
+            "material": "ACERO INOXIDABLE"
+        },
+        "categoria_dominio": "MECANICA"
+    },
+    "Para CELULAR, almacenamiento: 512 GB, color: PLATA": {
+        "codigo_unspsc": 43191608,
+        "nombre_producto": "Tubos de voz para los auriculares de teléfonos",
+        "nombre_clase": "Partes o accesorios de dispositivos de comunicación personal",
+        "nombre_familia": "Dispositivos de comunicaciones y accesorios",
+        "nombre_segmento": "Difusión de Tecnologías de Información y Telecomunicaciones",
+        "descripcion_iso": "AURICULARES",
+        "sustantivo_principal": "AURICULARES",
+        "atributos_recolectados": {},
+        "categoria_dominio": "TI"
+    },
+    "Necesito una laptop Lenovo Legion Pro modelo 83CV00FSLM": {
+        "codigo_unspsc": 43211509,
+        "nombre_producto": "Computadores de tableta",
+        "nombre_clase": "Computadores",
+        "nombre_familia": "Equipo informático y accesorios",
+        "nombre_segmento": "Difusión de Tecnologías de Información y Telecomunicaciones",
+        "descripcion_iso": "LAPTOP LENOVO LEGION PRO MODELO 83CV00FSLM",
+        "sustantivo_principal": "LAPTOP",
+        "atributos_recolectados": {
+            "marca": "Lenovo",
+            "modelo_exacto": "83CV00FSLM",
+            "linea": "Legion Pro"
+        },
+        "categoria_dominio": "TI"
+    },
+    "Necesito un disco SSD Samsung 990 Pro de 1TB": {
+        "codigo_unspsc": 43201827,
+        "nombre_producto": "Dispositivo de almacenamiento de disco duro portátil",
+        "nombre_clase": "Dispositivos de almacenamiento",
+        "nombre_familia": "Componentes para tecnología de la información, difusión o telecomunicaciones",
+        "nombre_segmento": "Difusión de Tecnologías de Información y Telecomunicaciones",
+        "descripcion_iso": "DISCO SSD SAMSUNG 990 PRO DE 1TB",
+        "sustantivo_principal": "DISCO SSD",
+        "atributos_recolectados": {
+            "marca": "Samsung",
+            "modelo_exacto": "990 Pro",
+            "capacidad_de_almacenamiento": "1TB",
+            "tipo": "SSD"
+        },
+        "categoria_dominio": "TI"
+    },
+    "Para CAUDALÍMETRO, modelo_exacto_o_numero_de_parte: IFM4080K, norma_de_fabricacion_cuerpo: ASTM A105, certificacion_para_fluidos_peligrosos: UL": {
+        "codigo_unspsc": 41103323,
+        "nombre_producto": "Flujómetro acústico de canal abierto",
+        "nombre_clase": "Equipo de mecánica de fluidos",
+        "nombre_familia": "Equipo de laboratorio y científico",
+        "nombre_segmento": "Equipos y Suministros de Laboratorio, de Medición, de Observación y de Pruebas",
+        "descripcion_iso": "CAUDALÍMETRO ELECTROMAGNÉTICO, DIÁMETRO NOMINAL 4 IN, CONEXIONES BRIDADAS ANSI CLASE 150 DE ACERO AL CARBONO, RECUBRIMIENTO INTERNO DE PTFE, ELECTRODOS DE MEDICIÓN EN HASTELLOY C, ALIMENTACIÓN 24V DC, SALIDA ANALÓGICA 4-20 MA CON PROTOCOLO HART, GRADO DE PROTECCIÓN IP67, RANGO DE MEDICIÓN 0-100 L/MIN, PRECISIÓN ±5%, MODELO IFM4080K, NORMA DE FABRICACIÓN CUERPO ASTM A105, CERTIFICACIÓN PARA FLUIDOS PELIGROSOS UL",
+        "sustantivo_principal": "CAUDALÍMETRO",
+        "atributos_recolectados": {
+            "tipo": "electromagnético",
+            "diametro_nominal": "4 IN",
+            "tipo_conexion": "bridadas ANSI Clase 150",
+            "material_cuerpo": "acero al carbono",
+            "recubrimiento_interno": "PTFE",
+            "material_electrodos": "Hastelloy C",
+            "alimentacion": "24V DC",
+            "salida_analogica": "4-20 mA",
+            "protocolo": "HART",
+            "grado_proteccion": "IP67",
+            "rango_medicion": "0-100 L/min",
+            "precision": "±5%",
+            "modelo_exacto": "IFM4080K",
+            "norma_fabricacion_cuerpo": "ASTM A105",
+            "certificacion_fluidos_peligrosos": "UL"
+        },
+        "categoria_dominio": "MECANICA"
+    },
+    "Para BRIDA, norma_fabricacion_cuerpo: DIN 2633, tipo_cara_brida: FF - Flat Face": {
+        "codigo_unspsc": 40175103,
+        "nombre_producto": "Brida encajada por soldadura para tubos de acero inoxidable",
+        "nombre_clase": "Brida encajada por soldadura",
+        "nombre_familia": "Instalaciones de tubos y entubamientos",
+        "nombre_segmento": "Componentes y Equipos para Distribución y Sistemas de Acondicionamiento",
+        "descripcion_iso": "BRIDA DE CUELLO SOLDADO WELDING NECK, DIÁMETRO NOMINAL 2 IN, CLASE 150, ACERO INOXIDABLE ASTM A182 F316L, NORMA DE FABRICACIÓN CUERPO DIN 2633, TIPO CARA BRIDA FF - FLAT FACE",
+        "sustantivo_principal": "BRIDA",
+        "atributos_recolectados": {
+            "tipo": "Welding Neck",
+            "diametro_nominal": "2 IN",
+            "clase": "150",
+            "material": "ASTM A182 F316L",
+            "norma_fabricacion_cuerpo": "DIN 2633",
+            "tipo_cara_brida": "FF - Flat Face"
+        },
+        "categoria_dominio": "MECANICA"
+    },
+    "Memoria RAM de 16GB, formato SODIMM, tipo DDR4 a 3200 MHz, latencia CL22": {
+        "codigo_unspsc": 32101603,
+        "nombre_producto": "Memoria ram estática (sram)",
+        "nombre_clase": "Circuitos integrados",
+        "nombre_familia": "Circuitos impresos, circuitos integrados y micro ensamblajes",
+        "nombre_segmento": "Componentes y Suministros Electrónicos",
+        "descripcion_iso": "MEMORIA RAM DE 16GB, FORMATO SODIMM, TIPO DDR4 A 3200 MHZ, LATENCIA CL22",
+        "sustantivo_principal": "MEMORIA",
+        "atributos_recolectados": {
+            "capacidad_de_almacenamiento": "16GB",
+            "formato": "SODIMM",
+            "tipo": "DDR4",
+            "frecuencia": "3200 MHz",
+            "latencia": "CL22"
+        },
+        "categoria_dominio": "TI"
+    },
+    "Teléfono celular inteligente, marca Samsung, modelo Galaxy A54, capacidad de 256 GB de almacenamiento interno, 8 GB de memoria RAM, conectividad 5G, color negro, equipo liberado para cualquier operador": {
+        "codigo_unspsc": 43191501,
+        "nombre_producto": "Teléfonos móviles",
+        "nombre_clase": "Dispositivos de comunicación personal",
+        "nombre_familia": "Dispositivos de comunicaciones y accesorios",
+        "nombre_segmento": "Difusión de Tecnologías de Información y Telecomunicaciones",
+        "descripcion_iso": "SMARTPHONE SAMSUNG GALAXY A54, 256 GB, 8 GB RAM, 5G, NEGRO",
+        "sustantivo_principal": "TELEFONO",
+        "atributos_recolectados": {
+            "marca": "Samsung",
+            "modelo_exacto": "Galaxy A54",
+            "capacidad_de_almacenamiento_interno": "256 GB",
+            "memoria_RAM": "8 GB",
+            "conectividad": "5G",
+            "color": "negro"
+        },
+        "categoria_dominio": "TI"
+    },
+    "Tuberia de acero al carbono sin costura, ASTM A106 Grado B, 8 pulgadas de diametro nominal, Schedule 80, extremos biselados, tramos de 6 metros, recubrimiento epóxico anticorrosivo": {
+        "codigo_unspsc": 40173003,
+        "nombre_producto": "Semiacoplamientos para tubos de acero forjado",
+        "nombre_clase": "Semiacoplamientos de tubería",
+        "nombre_familia": "Instalaciones de tubos y entubamientos",
+        "nombre_segmento": "Componentes y Equipos para Distribución y Sistemas de Acondicionamiento",
+        "descripcion_iso": "TUBERIA, 80, ASTM A106 GRADO B, BISELADOS, RECUBRIMIENTO EPÓXICO ANTICORROSIVO",
+        "sustantivo_principal": "TUBERIA",
+        "atributos_recolectados": {
+            "material": "acero al carbono",
+            "norma": "ASTM A106 Grado B",
+            "diámetro nominal": "8 pulgadas",
+            "schedule": "80",
+            "extremos": "biselados",
+            "longitud de tramos": "6 metros",
+            "recubrimiento": "epóxico anticorrosivo"
+        },
+        "categoria_dominio": "MECANICA"
+    },
+    "Laptop Lenovo ThinkPad E16 Gen 2, procesador Core i7-13700H, 16 GB RAM, 512 GB SSD, pantalla 16 pulgadas, Windows 11 Pro": {
+        "codigo_unspsc": 43211503,
+        "nombre_producto": "Computadores notebook",
+        "nombre_clase": "Computadores",
+        "nombre_familia": "Equipo informático y accesorios",
+        "nombre_segmento": "Difusión de Tecnologías de Información y Telecomunicaciones",
+        "descripcion_iso": "LAPTOP LENOVO THINKPAD E16 GEN 2, PROCESADOR CORE I7-13700H, 16 GB RAM, 16 IN, WINDOWS 11 PRO",
+        "sustantivo_principal": "LAPTOP",
+        "atributos_recolectados": {
+            "marca": "Lenovo",
+            "modelo_exacto": "ThinkPad E16 Gen 2",
+            "procesador": "Core i7-13700H",
+            "ram": "16 GB",
+            "ssd": "512 GB",
+            "tamaño_de_pantalla": "16 pulgadas",
+            "sistema_operativo": "Windows 11 Pro"
+        },
+        "categoria_dominio": "TI"
+    },
+    "Telefono celular inteligente, marca Samsung, modelo Galaxy A54, 256 GB almacenamiento, 8 GB RAM, conectividad 5G, color negro": {
+        "codigo_unspsc": 43191501,
+        "nombre_producto": "Teléfonos móviles",
+        "nombre_clase": "Dispositivos de comunicación personal",
+        "nombre_familia": "Dispositivos de comunicaciones y accesorios",
+        "nombre_segmento": "Difusión de Tecnologías de Información y Telecomunicaciones",
+        "descripcion_iso": "SMARTPHONE SAMSUNG GALAXY A54, 256 GB, 8 GB RAM, 5G, NEGRO",
+        "sustantivo_principal": "CELULAR",
+        "atributos_recolectados": {
+            "marca": "Samsung",
+            "modelo_exacto": "Galaxy A54",
+            "capacidad_de_almacenamiento": "256 GB",
+            "ram": "8 GB",
+            "conectividad": "5G",
+            "color": "negro"
+        },
+        "categoria_dominio": "TI"
+    }
+}

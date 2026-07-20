@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  chatbot-unspcs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot_unspcs_container
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mapear el archivo de claves de API si es dinámico y no quieres meterlo en la imagen
+      - ./Clave API.txt:/app/Clave API.txt
+      # Persistencia de base de datos local y caché de Golden Record
+      - ./data:/app/data
+      - ./golden_record.json:/app/golden_record.json
+    environment:
+      - PORT=5000
+      - FLASK_ENV=production
+    restart: unless-stopped

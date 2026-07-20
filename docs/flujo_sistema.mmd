@@ -1,0 +1,113 @@
+﻿flowchart TD
+    A(["Usuario envía consulta\nal chat"]) --> B
+
+    subgraph cache_node["cache_node — golden_record.json"]
+        B["Normalizar query\nminus + strip"]
+        B --> C{"Match exacto\nen caché?"}
+        C -->|"Sí\nscore = 100%"| D["Retornar item cacheado\nestado_global = Alta"]
+        C -->|No| E["estado_global = Baja\npasar al extractor"]
+    end
+
+    D --> Z(["Respuesta al usuario\ncódigo UNSPSC + desc ISO 8000"])
+    E --> F
+
+    subgraph extractor_node["extractor_node — Llama 3.3 70B (Groq)"]
+        F["Expandir abreviaturas\nFF, A/C, AA/2, AAA/4..."]
+        F --> G["LLM extrae ítems\ndel historial completo"]
+        G --> H["Post-extracción:\nsalvaguardas por sustantivo\nVENTILADOR, PILA, IMPRESORA..."]
+        H --> I{"Filtro de especialización\nALLOWED_PRODUCTS"}
+        I -->|"Sí está en\nFLUIDOS/TI/ELECTRICA"| J["categoria_dominio = familia\nestado_decision = Baja"]
+        I -->|"No está\nen catálogo"| K["categoria_dominio = RECHAZADO\nestado_decision = Rechazado"]
+    end
+
+    J --> L
+    K --> L
+
+    subgraph market_verifier_node["market_verifier_node — DuckDuckGo + SQLite cache"]
+        L{"requiere_busqueda_web\n== True?"}
+        L -->|"Sí"| M["Buscar en DuckDuckGo\nCaché SQLite 7 días"]
+        L -->|"No"| N["market_context = vacío"]
+        M --> O["Inyectar market_context\nen el ítem"]
+        N --> O
+    end
+
+    O --> P
+
+    subgraph retriever_node["retriever_node — FAISS + Keyword Boosting"]
+        P["expanded_queries del ítem"]
+        P --> Q["Búsqueda vectorial densa\nMiniLM-L12-v2\n49,000 productos UNSPSC"]
+        Q --> R["Keyword boosting léxico\ndiccionario de instrumentación\nLSL, PT, TT, LSH..."]
+        R --> S["Top-8 candidatos\ncon score de similitud"]
+    end
+
+    S --> T
+
+    subgraph decision_maker_node["decision_maker_node — Claude 3.5 (OpenRouter)"]
+        T["Auditoría ISO 8000\n+ contexto FAISS + web"]
+        T --> U{"P/N unívoco\nen el ítem?"}
+        U -->|"Sí\nRuta rápida"| V["Forzar Alta\natributos_faltantes = vacío"]
+        U -->|No| W{"Conflicto\ngeométrico?"}
+        W -->|"Sí\nSSD factor forma, etc"| X["Ambigüedad\nconflicto físico"]
+        W -->|No| Y{"Atributos\ncompletos?"}
+        Y -->|"Faltan datos\ncríticos"| X2["Ambigüedad\npregunta aclaratoria"]
+        Y -->|Completos| Z2{"Score RAG\ndel best_match"}
+        Z2 -->|"≥ 80%"| V
+        Z2 -->|"50–80%"| V2["Alta con cuarentena\nrequiere_revision_humana=True"]
+        Z2 -->|"< 50%"| X2
+        V --> AA["estado_global = Alta"]
+        V2 --> AA
+        X --> AB["estado_global = Ambigüedad"]
+        X2 --> AB
+    end
+
+    AA --> AC
+    AB --> Z
+
+    subgraph generator_node["generator_node — Groq / DeepSeek"]
+        AC["LLM genera descripción\ncon reglas ISO 8000\n(prompt con 26 reglas)"]
+        AC --> AD{"Familia del\nsustantivo_principal"}
+        AD -->|TUBERIA| AE["Python formatter:\nTUBERIA MAT, DIAM, SCH, NORMA\nEXTREMOS, LONGITUD, RECUBRIMIENTO"]
+        AD -->|VALVULA| AF["Python formatter:\nVALVULA TIPO DIAM, CL, CONEXION\nCUERPO, DISCO, ASIENTO, ACCIONAMIENTO"]
+        AD -->|MOTOR| AG["Python formatter:\nMOTOR ELECTRICO HP, V, FASES\nRPM, HZ, CARCASA, IP, MONTAJE"]
+        AD -->|"SMARTPHONE\nCELULAR"| AH["Python formatter:\nSMARTPHONE MARCA MODELO\nGB, GB RAM, RED, COLOR"]
+        AD -->|"LAPTOP/PC"| AI["Python formatter:\nLAPTOP MARCA MODELO, PROCESADOR\nRAM, STORAGE, PANTALLA, SO"]
+        AD -->|"CAUDALIMETRO\nFLUJOMETRO"| AJ["Python formatter:\nCAUDALIMETRO TIPO, DIAM, CONEXION\nLINER, ELECTRODOS, SEÑAL, V"]
+        AD -->|"Otros\nBRIDA, CODO..."| AK["LLM + limpieza\nPython genérica"]
+        AE --> AL
+        AF --> AL
+        AG --> AL
+        AH --> AL
+        AI --> AL
+        AJ --> AL
+        AK --> AL
+        AL["Deduplicación de atributos\nAnti-alucinación NP/PN\nLimpieza ISO 8000"]
+    end
+
+    AL --> AM
+
+    subgraph post_proc["Post-procesamiento — clasificar_con_agente()"]
+        AM{"estado_global?"}
+        AM -->|Rechazado| AN["Mensaje fuera de alcance\nfamilias soportadas"]
+        AM -->|"Alta"| AO["guardar_en_cache()\ngolden_record.json"]
+        AO --> AP["Retornar código UNSPSC\nruta jerárquica + one_line_desc"]
+        AM -->|"Baja / vacío"| AQ["Fallback offline\nFAISS local sin LLM"]
+        AM -->|"Ambigüedad"| AR["Retornar pregunta\n+ atributos_faltantes\n+ chips interactivos al frontend"]
+    end
+
+    AN --> Z
+    AP --> Z
+    AQ --> Z
+    AR --> Z
+
+    style A fill:#312e81,color:#e0e0ff,stroke:#6d28d9
+    style Z fill:#312e81,color:#e0e0ff,stroke:#6d28d9
+    style D fill:#14532d,color:#86efac,stroke:#22c55e
+    style K fill:#7f1d1d,color:#fca5a5,stroke:#ef4444
+    style X fill:#713f12,color:#fde68a,stroke:#f59e0b
+    style X2 fill:#713f12,color:#fde68a,stroke:#f59e0b
+    style V fill:#14532d,color:#86efac,stroke:#22c55e
+    style V2 fill:#1e3a5f,color:#93c5fd,stroke:#3b82f6
+    style AL fill:#1e1b4b,color:#c4b5fd,stroke:#8b5cf6
+    style AO fill:#14532d,color:#86efac,stroke:#22c55e
+    style AQ fill:#1e3a5f,color:#93c5fd,stroke:#3b82f6
+    style AN fill:#7f1d1d,color:#fca5a5,stroke:#ef4444

@@ -1,0 +1,27 @@
+# === Dependencias del Chat Bot UNSPSC ===
+
+# Core ML & Vectores
+sentence-transformers
+faiss-cpu
+numpy
+torch
+
+# Datos
+pandas
+openpyxl
+pickle5; python_version < "3.8"
+
+# Web Server
+flask
+
+# LLMs (Multi-Modelo con cascada)
+groq
+openai
+google-genai
+
+# Orquestación de agentes
+langgraph
+langchain-core
+
+# Búsqueda web
+duckduckgo-search

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Logs & DBs
+*.log
+data/unspcs_local.db
+data/vector_index/
+
+# OS/System
+.DS_Store
+Thumbs.db
+
+# Config / IDEs
+.vscode/
+.idea/
+.git/
+.gitignore
+
+# Cachés temporales locales
+golden_record.json
+test_refactoring.py
+server.log

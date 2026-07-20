@@ -1,0 +1,35 @@
+﻿# Entornos virtuales
+venv/
+env/
+ENV/
+.venv/
+
+# Variables de entorno y secretos (¡NUNCA SUBIR A GITHUB!)
+.env
+.env.local
+.env.*.local
+
+# Archivos de caché de Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Bases de datos locales y logs
+*.db
+*.sqlite3
+*.log
+server.log
+
+# Archivos temporales y de pruebas del agente
+scratch/
+.system_generated/
+
+# Archivos de IDE y sistema operativo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Datos descargados en runtime
+data/duckduckgo_cache.db
