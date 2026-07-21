@@ -11,8 +11,11 @@ pandas
 openpyxl
 pickle5; python_version < "3.8"
 
-# Web Server
+# Web Server & Deployment
 flask
+gunicorn
+python-dotenv
+requests
 
 # LLMs (Multi-Modelo con cascada)
 groq
@@ -25,3 +28,4 @@ langchain-core
 
 # Búsqueda web
 duckduckgo-search
+
