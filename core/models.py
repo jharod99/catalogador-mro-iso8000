@@ -12,49 +12,59 @@ if os.environ.get("LANGCHAIN_API_KEY"):
     os.environ["LANGCHAIN_TRACING_V2"] = "true"
     logger.info("[LANGSMITH] Monitoreo activado correctamente.")
 
+# Helper para obtener variables de entorno insensibles a mayúsculas/minúsculas
+def get_env_var(key: str) -> str:
+    return os.environ.get(key.upper()) or os.environ.get(key) or os.environ.get(key.lower()) or ""
+
 # Clientes
 from groq import Groq
 try:
-    groq_client = Groq(api_key=os.environ.get("Groq_API_KEY", ""))
+    key = get_env_var("GROQ_API_KEY")
+    groq_client = Groq(api_key=key) if key else None
 except Exception as e:
     groq_client = None
 
 from openai import OpenAI
 try:
+    key = get_env_var("OPENROUTER_API_KEY")
     openrouter_client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
-        api_key=os.environ.get("OPENROUTER_API_KEY", "")
-    )
+        api_key=key
+    ) if key else None
 except:
     openrouter_client = None
 
 from google import genai
 try:
-    gemini_client = genai.Client(api_key=os.environ.get("Gemini_API_KEY", ""))
+    key = get_env_var("GEMINI_API_KEY")
+    gemini_client = genai.Client(api_key=key) if key else None
 except:
     gemini_client = None
 
 try:
+    key = get_env_var("DEEPSEEK_API_KEY")
     deepseek_client = OpenAI(
         base_url="https://api.deepseek.com",
-        api_key=os.environ.get("deepseek_API_KEY", "")
-    )
+        api_key=key
+    ) if key else None
 except:
     deepseek_client = None
 
 try:
+    key = get_env_var("SILICONFLOW_API_KEY")
     siliconflow_client = OpenAI(
         base_url="https://api.siliconflow.cn/v1",
-        api_key=os.environ.get("siliconflow_API_KEY", "")
-    )
+        api_key=key
+    ) if key else None
 except:
     siliconflow_client = None
 
 try:
+    key = get_env_var("MISTRAL_API_KEY")
     mistral_client = OpenAI(
         base_url="https://api.mistral.ai/v1",
-        api_key=os.environ.get("Mistral_API_KEY", "")
-    )
+        api_key=key
+    ) if key else None
 except:
     mistral_client = None
 
