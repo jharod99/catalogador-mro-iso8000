@@ -17,8 +17,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', filename='server.log')
+import sys
+
+# Configurar logging hacia stdout para contenedores de producción (Render)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -91,7 +97,9 @@ def classify():
         return jsonify(resultado)
 
     except Exception as e:
-        logger.error(f"Error en classify endpoint: {e}")
+        import traceback
+        tb = traceback.format_exc()
+        logger.error(f"Error en classify endpoint: {e}\n{tb}")
         return jsonify({
             'status': 'error',
             'mensaje': f'Error interno al procesar la consulta: {str(e)}'
