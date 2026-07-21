@@ -38,4 +38,4 @@ EXPOSE 5000
 # Comando para ejecutar la aplicación usando Gunicorn (servidor WSGI de producción)
 # Si prefieres Flask nativo para desarrollo, puedes usar: python app.py
 RUN pip install --no-cache-dir gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "2", "--timeout", "120", "app:app"]
