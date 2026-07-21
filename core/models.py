@@ -76,7 +76,7 @@ except:
     ddgs = None
 
 
-DEFAULT_ORDER = ["openrouter", "deepseek", "groq", "siliconflow", "mistral", "gemini"]
+DEFAULT_ORDER = ["groq", "openrouter", "deepseek", "siliconflow", "mistral", "gemini"]
 
 def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperature: float = 0.1) -> str:
     """
@@ -90,7 +90,7 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
                 logger.info("Llamando a OpenRouter (Claude-3.5-Sonnet)...")
                 response = openrouter_client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
-                    model="anthropic/claude-3.5-sonnet",
+                    model="anthropic/claude-3.5-sonnet:beta",
                     temperature=temperature
                 )
                 return response.choices[0].message.content

@@ -3,6 +3,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""  # Force CPU to prevent CUDA conflicts
 os.environ["OMP_NUM_THREADS"] = "1"      # Prevent thread thrashing/hanging on CPU
 os.environ["MKL_NUM_THREADS"] = "1"      # Prevent MKL thread thrashing
 os.environ["TQDM_DISABLE"] = "1"         # Disable tqdm progress bars to prevent Windows redirect errors
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import torch
 torch.set_num_threads(1)                 # Prevent PyTorch thread deadlock
