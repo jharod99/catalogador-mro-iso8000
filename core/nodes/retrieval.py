@@ -131,38 +131,44 @@ def retriever_node(state: AgentState) -> Dict[str, Any]:
                             lexical_tokens.add(syn)
                 
         candidates_dict = {}
-        for sub_query in item["expanded_queries"]:
-            if not sub_query: continue
-            
-            query_vector = cb.model.encode([sub_query], convert_to_numpy=True, show_progress_bar=False).astype('float32')
-            faiss.normalize_L2(query_vector)
-            
-            scores, ids = cb.index.search(query_vector, 5)
-            
-            for i in range(len(ids[0])):
-                prod_id = int(ids[0][i])
-                score = float(scores[0][i])
-                meta = cb.metadata.get(prod_id, None)
-                if meta:
-                    score_perc = score * 100
-                    if prod_id in candidates_dict:
-                        candidates_dict[prod_id]["score_percentage"] = max(candidates_dict[prod_id]["score_percentage"], score_perc)
-                    else:
-                        candidates_dict[prod_id] = {
-                            "codigo_producto": prod_id,
-                            "nombre_producto": meta["nombre_producto"],
-                            "ruta_jerarquica": f"{meta['nombre_segmento']} -> {meta['nombre_familia']} -> {meta['nombre_clase']}",
-                            "score_percentage": score_perc,
-                            "lexical_matches": 0,
-                            "metadata": meta
-                        }
+        if cb.model is not None:
+            for sub_query in item["expanded_queries"]:
+                if not sub_query: continue
+                try:
+                    query_vector = cb.model.encode([sub_query], convert_to_numpy=True, show_progress_bar=False).astype('float32')
+                    faiss.normalize_L2(query_vector)
+                    
+                    scores, ids = cb.index.search(query_vector, 5)
+                    
+                    for i in range(len(ids[0])):
+                        prod_id = int(ids[0][i])
+                        score = float(scores[0][i])
+                        meta = cb.metadata.get(prod_id, None)
+                        if meta:
+                            score_perc = score * 100
+                            if prod_id in candidates_dict:
+                                candidates_dict[prod_id]["score_percentage"] = max(candidates_dict[prod_id]["score_percentage"], score_perc)
+                            else:
+                                candidates_dict[prod_id] = {
+                                    "codigo_producto": prod_id,
+                                    "nombre_producto": meta["nombre_producto"],
+                                    "ruta_jerarquica": f"{meta['nombre_segmento']} -> {meta['nombre_familia']} -> {meta['nombre_clase']}",
+                                    "score_percentage": score_perc,
+                                    "lexical_matches": 0,
+                                    "metadata": meta
+                                }
+                except Exception as e_enc:
+                    logger.warning(f"[RETRIEVER] Error en encode vectorial: {e_enc}")
         
-        # Pre-encode q_clean once outside the metadata loop
+        # Pre-encode q_clean once outside the metadata loop if model is present
         q_clean = item["expanded_queries"][0] if item["expanded_queries"] else ""
         q_vec = None
-        if q_clean:
-            q_vec = cb.model.encode([q_clean], convert_to_numpy=True, show_progress_bar=False).astype('float32')
-            faiss.normalize_L2(q_vec)
+        if q_clean and cb.model is not None:
+            try:
+                q_vec = cb.model.encode([q_clean], convert_to_numpy=True, show_progress_bar=False).astype('float32')
+                faiss.normalize_L2(q_vec)
+            except Exception:
+                q_vec = None
             
         allowed_prefixes = NOUN_CLASS_MAPPING.get(main_noun, None)
 

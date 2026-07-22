@@ -123,16 +123,21 @@ class UNSPSCChatbot:
                 f"Por favor ejecuta primero 'ingesta_datos.py' para generar el índice y metadatos."
             )
             
-        # Cargar modelo en modo ONNX FastEmbed para ahorrar ~500MB de RAM en servidores de baja memoria
+        # Cargar modelo de embeddings (FastEmbed -> SentenceTransformer -> Fallback Léxico)
         print("Cargando modelo de lenguaje...")
+        self.model = None
         try:
             self.model = FastEmbedAdapter("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
             self.model.encode(["test"])
             print("Modelo ONNX FastEmbed cargado exitosamente (RAM optimizada < 250MB).")
         except Exception as e_fast:
-            logger.warning(f"FastEmbed fallback a SentenceTransformer: {e_fast}")
-            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
+            logger.warning(f"FastEmbed no disponible: {e_fast}. Probando SentenceTransformer...")
+            try:
+                self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+                self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
+            except Exception as e_st:
+                logger.warning(f"SentenceTransformer no disponible: {e_st}. Usando motor RAG léxico de ultra-baja memoria.")
+                self.model = None
         
         # Cargar índice FAISS
         print("Cargando índice vectorial local (FAISS)...")
