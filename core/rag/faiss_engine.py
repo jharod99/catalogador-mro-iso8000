@@ -5,6 +5,8 @@ os.environ["MKL_NUM_THREADS"] = "1"      # Prevent MKL thread thrashing
 os.environ["TQDM_DISABLE"] = "1"         # Disable tqdm progress bars to prevent Windows redirect errors
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 import torch
 torch.set_num_threads(1)                 # Prevent PyTorch thread deadlock
@@ -112,10 +114,13 @@ class UNSPSCChatbot:
                 f"Por favor ejecuta primero 'ingesta_datos.py' para generar el índice y metadatos."
             )
             
-        # Cargar modelo
+        # Cargar modelo en modo offline desde la caché de la imagen Docker
         print("Cargando modelo de lenguaje...")
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
+        try:
+            self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device, local_files_only=True)
+        except Exception:
+            self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
         
         # Cargar índice FAISS
         print("Cargando índice vectorial local (FAISS)...")
