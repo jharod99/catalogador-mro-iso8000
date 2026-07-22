@@ -29,8 +29,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
-# Pre-descargar el modelo de embeddings durante la fase de build para evitar picos de memoria RAM en runtime
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
+# Pre-descargar el modelo de embeddings en modo ONNX FastEmbed durante la fase de build
+RUN python -c "from fastembed import TextEmbedding; TextEmbedding('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')" || true
 
 # Copiar el resto del código del proyecto
 COPY . .

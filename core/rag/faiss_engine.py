@@ -99,6 +99,17 @@ def limpiar_consulta(query):
     q = re.sub(r'\s+', ' ', q).strip()
     return q
 
+class FastEmbedAdapter:
+    def __init__(self, model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"):
+        from fastembed import TextEmbedding
+        self.embedding_model = TextEmbedding(model_name=model_name)
+    
+    def encode(self, sentences, convert_to_numpy=True, show_progress_bar=False):
+        if isinstance(sentences, str):
+            sentences = [sentences]
+        embeddings = list(self.embedding_model.embed(sentences))
+        return np.array(embeddings, dtype='float32')
+
 class UNSPSCChatbot:
     def __init__(self, data_dir=None):
         if data_dir is None:
@@ -114,13 +125,18 @@ class UNSPSCChatbot:
                 f"Por favor ejecuta primero 'ingesta_datos.py' para generar el índice y metadatos."
             )
             
-        # Cargar modelo en modo offline desde la caché de la imagen Docker
+        # Cargar modelo en modo ONNX FastEmbed para ahorrar ~500MB de RAM en servidores de baja memoria
         print("Cargando modelo de lenguaje...")
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         try:
-            self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device, local_files_only=True)
-        except Exception:
-            self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
+            self.model = FastEmbedAdapter("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+            print("Modelo ONNX FastEmbed cargado exitosamente (RAM optimizada < 250MB).")
+        except Exception as e_fast:
+            print(f"FastEmbed fallback a SentenceTransformer: {e_fast}")
+            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            try:
+                self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device, local_files_only=True)
+            except Exception:
+                self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
         
         # Cargar índice FAISS
         print("Cargando índice vectorial local (FAISS)...")

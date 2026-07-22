@@ -1,6 +1,8 @@
 # === Dependencias del Chat Bot UNSPSC ===
 
-# Core ML & Vectores
+# Core ML & Vectores (Modo ONNX de ultra-bajo consumo de RAM)
+fastembed
+onnxruntime
 sentence-transformers
 faiss-cpu
 numpy
