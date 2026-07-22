@@ -166,26 +166,33 @@ def retriever_node(state: AgentState) -> Dict[str, Any]:
             
         allowed_prefixes = NOUN_CLASS_MAPPING.get(main_noun, None)
 
-        # Keyword match
-        for prod_id, prod_words in cb.precomputed_words.items():
-            matches = len(lexical_tokens.intersection(prod_words))
-            
-            if matches > 0:
+        # Keyword match usando índice invertido para alta velocidad y mínimo uso de memoria
+        if hasattr(cb, 'inverted_index') and cb.inverted_index:
+            prod_token_matches = {}  # prod_id -> set of matched tokens
+            for token in lexical_tokens:
+                if token in cb.inverted_index:
+                    for prod_id in cb.inverted_index[token]:
+                        if prod_id not in prod_token_matches:
+                            prod_token_matches[prod_id] = set()
+                        prod_token_matches[prod_id].add(token)
+
+            for prod_id, matched_tokens in prod_token_matches.items():
+                matches = len(matched_tokens)
                 prod_id_str = str(prod_id)
                 is_class_allowed = True
                 if allowed_prefixes:
                     is_class_allowed = any(prod_id_str.startswith(prefix) for prefix in allowed_prefixes)
-                
+
                 if not is_class_allowed:
                     if prod_id in candidates_dict:
                         del candidates_dict[prod_id]
                     continue
-                    
-                has_main_noun = len(main_noun_synonyms.intersection(prod_words)) > 0
+
+                has_main_noun = len(main_noun_synonyms.intersection(matched_tokens)) > 0
                 boost = matches * 25.0
                 if has_main_noun:
-                    boost += 150.0 # Huge boost to prioritize the main product noun!
-                    
+                    boost += 150.0  # Huge boost to prioritize the main product noun!
+
                 if prod_id in candidates_dict:
                     candidates_dict[prod_id]["lexical_matches"] = matches
                     candidates_dict[prod_id]["score_percentage"] += boost
@@ -206,6 +213,45 @@ def retriever_node(state: AgentState) -> Dict[str, Any]:
                         "lexical_matches": matches,
                         "metadata": cb.metadata[prod_id]
                     }
+        elif hasattr(cb, 'precomputed_words') and cb.precomputed_words:
+            for prod_id, prod_words in cb.precomputed_words.items():
+                matches = len(lexical_tokens.intersection(prod_words))
+                if matches > 0:
+                    prod_id_str = str(prod_id)
+                    is_class_allowed = True
+                    if allowed_prefixes:
+                        is_class_allowed = any(prod_id_str.startswith(prefix) for prefix in allowed_prefixes)
+                    
+                    if not is_class_allowed:
+                        if prod_id in candidates_dict:
+                            del candidates_dict[prod_id]
+                        continue
+                        
+                    has_main_noun = len(main_noun_synonyms.intersection(prod_words)) > 0
+                    boost = matches * 25.0
+                    if has_main_noun:
+                        boost += 150.0
+                        
+                    if prod_id in candidates_dict:
+                        candidates_dict[prod_id]["lexical_matches"] = matches
+                        candidates_dict[prod_id]["score_percentage"] += boost
+                    else:
+                        if q_vec is not None:
+                            seq_idx = cb.id_to_seq[prod_id]
+                            vec = np.zeros(384, dtype='float32')
+                            cb.flat_index.reconstruct(seq_idx, vec)
+                            vec = vec / np.linalg.norm(vec)
+                            score_semantic = float(np.dot(q_vec[0], vec)) * 100
+                        else:
+                            score_semantic = 0.0
+                        candidates_dict[prod_id] = {
+                            "codigo_producto": prod_id,
+                            "nombre_producto": cb.metadata[prod_id]["nombre_producto"],
+                            "ruta_jerarquica": f"{cb.metadata[prod_id]['nombre_segmento']} -> {cb.metadata[prod_id]['nombre_familia']} -> {cb.metadata[prod_id]['nombre_clase']}",
+                            "score_percentage": score_semantic + boost,
+                            "lexical_matches": matches,
+                            "metadata": cb.metadata[prod_id]
+                        }
                     
         # --- LIMPIEZA FINAL DE CLASES NO PERMITIDAS ---
         if allowed_prefixes:

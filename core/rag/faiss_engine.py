@@ -366,13 +366,18 @@ def get_chatbot():
     if _chatbot is None:
         _chatbot = UNSPSCChatbot()
         import re
-        _chatbot.precomputed_words = {}
-        print("Precomputando palabras clave de productos para búsqueda léxica...")
+        _chatbot.inverted_index = {}
+        print("Precomputando índice invertido de productos para búsqueda léxica ultra-rápida...")
         for prod_id, meta in _chatbot.metadata.items():
             prod_text = f"{meta['nombre_producto']} {meta['nombre_clase']} {meta['nombre_familia']}"
             prod_text_norm = normalizar_texto(prod_text)
-            _chatbot.precomputed_words[prod_id] = set(re.findall(r'[a-z0-9]+', prod_text_norm))
-        print("Precomputación completa.")
+            words = set(re.findall(r'[a-z0-9]+', prod_text_norm))
+            for w in words:
+                if len(w) > 2:
+                    if w not in _chatbot.inverted_index:
+                        _chatbot.inverted_index[w] = []
+                    _chatbot.inverted_index[w].append(prod_id)
+        print("Precomputación de índice invertido completa.")
     return _chatbot
 
 def normalizar_texto(text: str) -> str:
