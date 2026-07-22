@@ -30,14 +30,22 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'unspsc_secret_key_123_dev')
 
-# Pre-cargar el modelo de lenguaje y cerebro FAISS en el inicio del servidor
+import threading
+import warnings
+warnings.filterwarnings("ignore")
+
+# Pre-cargar el modelo de lenguaje y cerebro FAISS en hilo secundario de fondo para abrir puerto 5000 al instante
 from core.rag.faiss_engine import get_chatbot
-try:
-    logger.info("Pre-cargando modelo y cerebro FAISS en el inicio del servidor...")
-    get_chatbot()
-    logger.info("Cerebro FAISS pre-cargado exitosamente.")
-except Exception as e_precarga:
-    logger.error(f"Error pre-cargando cerebro FAISS: {e_precarga}")
+
+def _preload_brain():
+    try:
+        logger.info("[STARTUP] Pre-cargando cerebro FAISS en hilo secundario...")
+        get_chatbot()
+        logger.info("[STARTUP] Cerebro FAISS cargado y listo para consultas.")
+    except Exception as e_precarga:
+        logger.error(f"[STARTUP] Error pre-cargando cerebro FAISS: {e_precarga}")
+
+threading.Thread(target=_preload_brain, daemon=True).start()
 
 @app.route('/')
 def home():

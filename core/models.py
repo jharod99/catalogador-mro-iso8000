@@ -70,8 +70,11 @@ except:
 
 # Búsqueda web
 try:
-    from duckduckgo_search import DDGS
-    ddgs = DDGS()
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from duckduckgo_search import DDGS
+        ddgs = DDGS()
 except:
     ddgs = None
 
