@@ -84,19 +84,31 @@ DEFAULT_ORDER = ["groq", "openrouter", "deepseek", "siliconflow", "mistral", "ge
 def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperature: float = 0.1) -> str:
     """
     Llama a los LLMs en cascada según el orden provisto hasta obtener una respuesta exitosa.
+    Incluye un timeout de 12s por llamada para evitar congelamientos en el frontend.
     """
     order = providers_order or DEFAULT_ORDER
     
     for provider in order:
         try:
-            if provider == "openrouter" and openrouter_client:
+            if provider == "groq" and groq_client:
+                logger.info("Llamando a Groq (Llama-3.3-70b-versatile)...")
+                response = groq_client.chat.completions.create(
+                    messages=[{"role": "user", "content": prompt}],
+                    model="llama-3.3-70b-versatile",
+                    temperature=temperature,
+                    timeout=12.0
+                )
+                return response.choices[0].message.content
+
+            elif provider == "openrouter" and openrouter_client:
                 logger.info("Llamando a OpenRouter...")
-                for or_model in ["meta-llama/llama-3.3-70b-instruct", "google/gemini-2.5-flash", "anthropic/claude-3.5-sonnet", "deepseek/deepseek-r1"]:
+                for or_model in ["meta-llama/llama-3.3-70b-instruct", "google/gemini-2.5-flash", "anthropic/claude-3.5-sonnet"]:
                     try:
                         response = openrouter_client.chat.completions.create(
                             messages=[{"role": "user", "content": prompt}],
                             model=or_model,
-                            temperature=temperature
+                            temperature=temperature,
+                            timeout=12.0
                         )
                         return response.choices[0].message.content
                     except Exception as e_or:
@@ -107,16 +119,8 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
                 response = deepseek_client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
                     model="deepseek-chat",
-                    temperature=temperature
-                )
-                return response.choices[0].message.content
-                
-            elif provider == "groq" and groq_client:
-                logger.info("Llamando a Groq (Llama-3.3-70b-versatile)...")
-                response = groq_client.chat.completions.create(
-                    messages=[{"role": "user", "content": prompt}],
-                    model="llama-3.3-70b-versatile",
-                    temperature=temperature
+                    temperature=temperature,
+                    timeout=12.0
                 )
                 return response.choices[0].message.content
                 
@@ -125,7 +129,8 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
                 response = siliconflow_client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
                     model="deepseek-ai/DeepSeek-V3",
-                    temperature=temperature
+                    temperature=temperature,
+                    timeout=12.0
                 )
                 return response.choices[0].message.content
                 
@@ -134,7 +139,8 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
                 response = mistral_client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
                     model="mistral-large-latest",
-                    temperature=temperature
+                    temperature=temperature,
+                    timeout=12.0
                 )
                 return response.choices[0].message.content
                 

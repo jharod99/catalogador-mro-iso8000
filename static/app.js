@@ -14,15 +14,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const typingIndicator = appendTypingIndicator();
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
+
         try {
             const response = await fetch('/api/classify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
                 body: JSON.stringify({ 
                     query: queryText,
                     is_new_query: !isOptionSelection
                 })
             });
+            clearTimeout(timeoutId);
 
             if (!response.ok) throw new Error('Error en el servidor');
             
@@ -30,9 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
             typingIndicator.remove();
             renderBotResponse(data);
         } catch (error) {
+            clearTimeout(timeoutId);
             console.error('Error:', error);
             typingIndicator.remove();
-            appendMessage('bot', `❌ Error: ${error.message}`);
+            const errText = error.name === 'AbortError' ? 'La consulta tardó demasiado tiempo en responder. Por favor, reintenta.' : error.message;
+            appendMessage('bot', `❌ Error: ${errText}`);
         } finally {
             setLoadingState(false);
         }
