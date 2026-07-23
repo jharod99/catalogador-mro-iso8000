@@ -93,7 +93,7 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
                 logger.info("Llamando a OpenRouter (Claude-3.5-Sonnet)...")
                 response = openrouter_client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
-                    model="anthropic/claude-3.5-sonnet:beta",
+                    model="anthropic/claude-3.5-sonnet",
                     temperature=temperature
                 )
                 return response.choices[0].message.content

@@ -67,14 +67,14 @@ def set_cached_search(query: str, response: str):
         logger.error(f"[DB] Error guardando en caché: {e}")
 
 # --- Métodos de historial de conversación ---
-def get_chat_history(session_id: str) -> List[Dict[str, str]]:
-    """Recupera todo el historial de conversación para una sesión en orden cronológico."""
+def get_chat_history(session_id: str, limit: int = 6) -> List[Dict[str, str]]:
+    """Recupera los últimos mensajes de conversación para una sesión en orden cronológico."""
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT role, content FROM chat_history WHERE session_id = ? ORDER BY id ASC",
-            (session_id,)
+            "SELECT role, content FROM (SELECT id, role, content FROM chat_history WHERE session_id = ? ORDER BY id DESC LIMIT ?) ORDER BY id ASC",
+            (session_id, limit)
         )
         rows = cursor.fetchall()
         conn.close()
