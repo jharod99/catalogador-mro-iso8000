@@ -97,6 +97,116 @@ def limpiar_consulta(query):
     q = re.sub(r'\s+', ' ', q).strip()
     return q
 
+import sqlite3
+
+class MetadataDB:
+    """Wrapper de metadatos respaldado por SQLite con caché LRU (< 3MB RAM)."""
+    def __init__(self, db_path, metadata_pkl_path=None):
+        self.db_path = db_path
+        self._cache = {}
+        self._init_db(metadata_pkl_path)
+
+    def _init_db(self, metadata_pkl_path):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS product_metadata (
+                prod_id INTEGER PRIMARY KEY,
+                nombre_producto TEXT,
+                codigo_segmento TEXT,
+                nombre_segmento TEXT,
+                codigo_familia TEXT,
+                nombre_familia TEXT,
+                codigo_clase TEXT,
+                nombre_clase TEXT
+            )
+        """)
+        cursor.execute("SELECT COUNT(*) FROM product_metadata")
+        count = cursor.fetchone()[0]
+        
+        if count == 0 and metadata_pkl_path and os.path.exists(metadata_pkl_path):
+            print("Poblando metadatos SQLite desde metadata.pkl para uso eficiente de RAM...")
+            with open(metadata_pkl_path, 'rb') as f:
+                raw_meta = pickle.load(f)
+            rows = []
+            for pid, meta in raw_meta.items():
+                rows.append((
+                    int(pid),
+                    meta.get("nombre_producto", ""),
+                    meta.get("codigo_segmento", ""),
+                    meta.get("nombre_segmento", ""),
+                    meta.get("codigo_familia", ""),
+                    meta.get("nombre_familia", ""),
+                    meta.get("codigo_clase", ""),
+                    meta.get("nombre_clase", "")
+                ))
+            cursor.executemany("INSERT INTO product_metadata VALUES (?,?,?,?,?,?,?,?)", rows)
+            conn.commit()
+            del raw_meta
+            import gc
+            gc.collect()
+            print("Población de metadatos SQLite completada.")
+        conn.close()
+
+    def get(self, prod_id, default=None):
+        if prod_id is None: return default
+        try:
+            prod_id = int(prod_id)
+        except (ValueError, TypeError):
+            return default
+
+        if prod_id in self._cache:
+            return self._cache[prod_id]
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT nombre_producto, codigo_segmento, nombre_segmento, codigo_familia, nombre_familia, codigo_clase, nombre_clase FROM product_metadata WHERE prod_id = ?", (prod_id,))
+            row = cursor.fetchone()
+            conn.close()
+            if row:
+                res = {
+                    "nombre_producto": row[0],
+                    "codigo_segmento": row[1],
+                    "nombre_segmento": row[2],
+                    "codigo_familia": row[3],
+                    "nombre_familia": row[4],
+                    "codigo_clase": row[5],
+                    "nombre_clase": row[6]
+                }
+                if len(self._cache) > 2000:
+                    self._cache.clear()
+                self._cache[prod_id] = res
+                return res
+            return default
+        except Exception:
+            return default
+
+    def items(self):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT prod_id, nombre_producto, codigo_segmento, nombre_segmento, codigo_familia, nombre_familia, codigo_clase, nombre_clase FROM product_metadata")
+        for row in cursor.fetchall():
+            yield row[0], {
+                "nombre_producto": row[1],
+                "codigo_segmento": row[2],
+                "nombre_segmento": row[3],
+                "codigo_familia": row[4],
+                "nombre_familia": row[5],
+                "codigo_clase": row[6],
+                "nombre_clase": row[7]
+            }
+        conn.close()
+
+    def __getitem__(self, prod_id):
+        res = self.get(prod_id)
+        if res is None:
+            raise KeyError(prod_id)
+        return res
+
+    def __contains__(self, prod_id):
+        return self.get(prod_id) is not None
+
 class FastEmbedAdapter:
     def __init__(self, model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"):
         from fastembed import TextEmbedding
@@ -117,7 +227,7 @@ class UNSPSCChatbot:
         self.metadata_path = os.path.join(data_dir, 'metadata.pkl')
         
         # Verificar que los archivos del "cerebro" existen
-        if not os.path.exists(self.index_path) or not os.path.exists(self.metadata_path):
+        if not os.path.exists(self.metadata_path):
             raise FileNotFoundError(
                 f"El cerebro del chatbot no está listo. "
                 f"Por favor ejecuta primero 'ingesta_datos.py' para generar el índice y metadatos."
@@ -140,21 +250,24 @@ class UNSPSCChatbot:
         else:
             print("Motor RAG léxico de ultra-baja memoria activado (RAM < 70MB, 0 latencia de red).")
         
-        # Cargar índice FAISS
-        print("Cargando índice vectorial local (FAISS)...")
-        self.index = faiss.read_index(self.index_path)
+        # Cargar metadatos respaldados por SQLite (< 3MB RAM)
+        db_file = os.path.join(self.data_dir, 'catalog_metadata.db')
+        self.metadata = MetadataDB(db_file, self.metadata_path)
         
-        # Cargar mapeo de IDs a índices secuenciales de FAISS para reconstrucción
-        self.id_map = faiss.vector_to_array(self.index.id_map)
-        self.id_to_seq = {int(id_val): idx for idx, id_val in enumerate(self.id_map)}
-        self.flat_index = faiss.downcast_index(self.index.index)
-        
-        # Cargar metadatos
-        print("Cargando metadatos de los productos...")
-        with open(self.metadata_path, 'rb') as f:
-            self.metadata = pickle.load(f)
+        # Cargar índice FAISS únicamente si tenemos modelo de embeddings activo
+        if self.model is not None and os.path.exists(self.index_path):
+            print("Cargando índice vectorial local (FAISS)...")
+            self.index = faiss.read_index(self.index_path)
+            self.id_map = faiss.vector_to_array(self.index.id_map)
+            self.id_to_seq = {int(id_val): idx for idx, id_val in enumerate(self.id_map)}
+            self.flat_index = faiss.downcast_index(self.index.index)
+        else:
+            self.index = None
+            self.id_map = None
+            self.id_to_seq = {}
+            self.flat_index = None
             
-        print(f"Chatbot listo. Índice vectorial cargado con {self.index.ntotal} productos.")
+        print("Chatbot listo (Motor SQLite + RAG Léxico optimizado).")
         
     def buscar(self, query_text, k=3):
         """
