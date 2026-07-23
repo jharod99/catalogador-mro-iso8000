@@ -110,5 +110,7 @@ def classify():
 
 
 if __name__ == '__main__':
-    # Ejecutar en puerto local 5050
-    app.run(debug=False, host='127.0.0.1', port=5050, threaded=False)
+    port = int(os.environ.get('PORT', 5050))
+    host = '0.0.0.0' if os.environ.get('PORT') else '127.0.0.1'
+    logger.info(f"Iniciando servidor en {host}:{port}")
+    app.run(debug=False, host=host, port=port, threaded=False)
