@@ -123,21 +123,22 @@ class UNSPSCChatbot:
                 f"Por favor ejecuta primero 'ingesta_datos.py' para generar el índice y metadatos."
             )
             
-        # Cargar modelo de embeddings (FastEmbed -> SentenceTransformer -> Fallback Léxico)
-        print("Cargando modelo de lenguaje...")
+        # Cargar modelo de embeddings (Modo Léxico Ligero por defecto para RAM < 70MB y 100% resiliencia)
+        print("Cargando cerebro del chatbot...")
         self.model = None
-        try:
-            self.model = FastEmbedAdapter("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-            self.model.encode(["test"])
-            print("Modelo ONNX FastEmbed cargado exitosamente (RAM optimizada < 250MB).")
-        except Exception as e_fast:
-            logger.warning(f"FastEmbed no disponible: {e_fast}. Probando SentenceTransformer...")
+        if os.environ.get("USE_HEAVY_EMBEDDINGS", "0") == "1":
             try:
-                self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-                self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
-            except Exception as e_st:
-                logger.warning(f"SentenceTransformer no disponible: {e_st}. Usando motor RAG léxico de ultra-baja memoria.")
-                self.model = None
+                self.model = FastEmbedAdapter("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+                self.model.encode(["test"])
+                print("Modelo ONNX FastEmbed cargado exitosamente.")
+            except Exception as e_fast:
+                try:
+                    self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+                    self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
+                except Exception:
+                    self.model = None
+        else:
+            print("Motor RAG léxico de ultra-baja memoria activado (RAM < 70MB, 0 latencia de red).")
         
         # Cargar índice FAISS
         print("Cargando índice vectorial local (FAISS)...")
@@ -157,80 +158,87 @@ class UNSPSCChatbot:
         
     def buscar(self, query_text, k=3):
         """
-        Busca las coincidencias semánticas del texto de entrada en el índice FAISS.
+        Busca las coincidencias del texto de entrada en el índice FAISS.
         """
-        # 1. Generar embedding de la consulta
-        query_vector = self.model.encode([query_text], convert_to_numpy=True, show_progress_bar=False)
-        query_vector = query_vector.astype('float32')
-        
-        # 2. Normalizar L2 para similitud coseno
+        if self.model is None:
+            key_tokens = obtener_tokens_clave(query_text)
+            resultados = []
+            if hasattr(self, 'inverted_index') and self.inverted_index:
+                matched_ids = set()
+                for token in key_tokens:
+                    if token in self.inverted_index:
+                        matched_ids.update(self.inverted_index[token])
+                for pid in list(matched_ids)[:k]:
+                    resultados.append({
+                        'codigo_producto': pid,
+                        'score': 1.0,
+                        'metadata': self.metadata.get(pid, {})
+                    })
+            return resultados
+
+        query_vector = self.model.encode([query_text], convert_to_numpy=True, show_progress_bar=False).astype('float32')
         faiss.normalize_L2(query_vector)
-        
-        # 3. Buscar en el índice FAISS
         scores, ids = self.index.search(query_vector, k)
-        
-        # Obtener los resultados
         resultados = []
         for i in range(k):
             score = float(scores[0][i])
             product_id = int(ids[0][i])
-            
-            # Obtener metadatos si existen
             prod_meta = self.metadata.get(product_id, None)
             resultados.append({
                 'codigo_producto': product_id,
                 'score': score,
                 'metadata': prod_meta
             })
-            
         return resultados
 
     def clasificar(self, query_text):
         """
-        Clasifica la consulta combinando Búsqueda Semántica (FAISS) + Búsqueda Léxica
-        (Keyword Search) y aplicando un boost por coincidencia de palabras clave.
+        Clasifica la consulta combinando Búsqueda Semántica + Búsqueda Léxica
+        y aplicando un boost por coincidencia de palabras clave.
         """
-        # 1. Generar query limpia (sin ruido técnico o marcas)
         cleaned_query = limpiar_consulta(query_text)
         if not cleaned_query:
-            cleaned_query = query_text # Fallback por si la limpieza borra todo
+            cleaned_query = query_text
             
-        # 2. Obtener tokens clave de la consulta limpia
         key_tokens = obtener_tokens_clave(cleaned_query)
-        
-        query_vector = self.model.encode([cleaned_query], convert_to_numpy=True, show_progress_bar=False)
-        query_vector = query_vector.astype('float32')
-        faiss.normalize_L2(query_vector)
-        
-        # 3. Búsqueda Semántica en FAISS (candidatos base)
-        scores, ids = self.index.search(query_vector, 25)
         candidatos_dict = {}
-        for i in range(25):
-            score = float(scores[0][i])
-            prod_id = int(ids[0][i])
-            candidatos_dict[prod_id] = score
-            
-        # 4. Búsqueda Léxica (Keyword Search) sobre todo el catálogo para evitar misses semánticos
+
+        if self.model is not None:
+            query_vector = self.model.encode([cleaned_query], convert_to_numpy=True, show_progress_bar=False).astype('float32')
+            faiss.normalize_L2(query_vector)
+            scores, ids = self.index.search(query_vector, 25)
+            for i in range(25):
+                score = float(scores[0][i])
+                prod_id = int(ids[0][i])
+                candidatos_dict[prod_id] = score
+        else:
+            query_vector = None
+            if key_tokens and hasattr(self, 'inverted_index') and self.inverted_index:
+                for token in key_tokens:
+                    if token in self.inverted_index:
+                        for pid in self.inverted_index[token]:
+                            candidatos_dict[pid] = candidatos_dict.get(pid, 0.0) + 0.25
+
         if key_tokens:
             keyword_matches = []
             for prod_id, meta in self.metadata.items():
                 prod_text = f"{meta['nombre_producto']} {meta['nombre_clase']} {meta['nombre_familia']}".lower()
-                # Normalización básica de formas comunes
                 prod_text = prod_text.replace('estaciones', 'estacion').replace('computadores', 'computador').replace('portatiles', 'portatil')
                 
                 matches = sum(1 for token in key_tokens if token in prod_text)
                 if matches > 0:
                     keyword_matches.append((prod_id, matches))
             
-            # Re-ordenar por cantidad de coincidencias y tomar las mejores 25 para evaluar
             keyword_matches.sort(key=lambda x: x[1], reverse=True)
             for prod_id, matches in keyword_matches[:25]:
                 if prod_id not in candidatos_dict:
-                    # Reconstruir vector y calcular la distancia semántica real contra la consulta limpia
-                    seq_idx = self.id_to_seq[prod_id]
-                    vec = np.zeros(384, dtype='float32')
-                    self.flat_index.reconstruct(seq_idx, vec)
-                    score = float(np.dot(query_vector[0], vec))
+                    if query_vector is not None:
+                        seq_idx = self.id_to_seq[prod_id]
+                        vec = np.zeros(384, dtype='float32')
+                        self.flat_index.reconstruct(seq_idx, vec)
+                        score = float(np.dot(query_vector[0], vec))
+                    else:
+                        score = matches * 0.20
                     candidatos_dict[prod_id] = score
 
         # 5. Aplicar Boost por coincidencia de palabras clave y compilar candidatos finales
