@@ -95,7 +95,12 @@ def decision_maker_node(state: AgentState) -> Dict[str, Any]:
             else:
                 item["estado_decision"] = "Ambigüedad"
                 item["pregunta_aclaratoria"] = res_json.get("pregunta") or "¿En qué equipo, industria o sistema instalará este producto?"
-                item["opciones"] = res_json.get("opciones", [])
+                raw_opciones = res_json.get("opciones", [])
+                clean_opciones = [
+                    op for op in raw_opciones
+                    if isinstance(op, dict) and not any(w in (op.get("titulo", "") + " " + op.get("descripcion", "")).lower() for w in ["otro", "especificar", "ningun", "ningún"])
+                ]
+                item["opciones"] = clean_opciones
                 estado_global = "Ambigüedad"
                 
         except Exception as e:
