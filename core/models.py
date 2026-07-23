@@ -90,13 +90,17 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
     for provider in order:
         try:
             if provider == "openrouter" and openrouter_client:
-                logger.info("Llamando a OpenRouter (Claude-3.5-Sonnet)...")
-                response = openrouter_client.chat.completions.create(
-                    messages=[{"role": "user", "content": prompt}],
-                    model="anthropic/claude-3.5-sonnet",
-                    temperature=temperature
-                )
-                return response.choices[0].message.content
+                logger.info("Llamando a OpenRouter...")
+                for or_model in ["meta-llama/llama-3.3-70b-instruct", "google/gemini-2.5-flash", "anthropic/claude-3.5-sonnet", "deepseek/deepseek-r1"]:
+                    try:
+                        response = openrouter_client.chat.completions.create(
+                            messages=[{"role": "user", "content": prompt}],
+                            model=or_model,
+                            temperature=temperature
+                        )
+                        return response.choices[0].message.content
+                    except Exception as e_or:
+                        logger.warning(f"[OPENROUTER] Modelo '{or_model}' falló: {e_or}")
                 
             elif provider == "deepseek" and deepseek_client:
                 logger.info("Llamando a DeepSeek (deepseek-chat)...")

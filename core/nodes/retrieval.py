@@ -49,7 +49,11 @@ def market_verifier_node(state: AgentState) -> Dict[str, Any]:
         if not ddgs:
             continue
             
-        search_query = f"{query} ficha técnica producto industrial"
+        # Limpiar consulta para búsqueda web (extraer términos clave concisos < 50 caracteres)
+        clean_q = re.sub(r'[,/():+]', ' ', query)
+        words = clean_q.split()
+        short_q = " ".join(words[:5])  # Tomar máximo 5 palabras clave principales
+        search_query = f"{short_q} ficha técnica industrial"
         
         try:
             results = ddgs.text(search_query, max_results=3)
@@ -57,7 +61,7 @@ def market_verifier_node(state: AgentState) -> Dict[str, Any]:
             # Filtrar resultados irrelevantes (diccionarios, noticias, jurídicos)
             relevant_bodies = []
             irrelevant_domains = ['rae.es', 'wikipedia.org', 'definicion', 'significado', 'diccionario']
-            for r in results:
+            for r in (results or []):
                 body = r.get('body', '')
                 href = r.get('href', '').lower()
                 title = r.get('title', '').lower()
