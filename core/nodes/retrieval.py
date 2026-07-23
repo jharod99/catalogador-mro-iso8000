@@ -20,11 +20,6 @@ def market_verifier_node(state: AgentState) -> Dict[str, Any]:
     
     for item in items:
         query = item["original_query"]
-        if item.get("categoria_dominio") == "RECHAZADO":
-            logger.info(f"[VERIFIER] Omitiendo búsqueda web para ítem rechazado: '{query}'")
-            continue
-
-        # Ruteo por búsqueda web (bypass inteligente)
         if item.get("requiere_busqueda_web") is not True:
             logger.info(f"[VERIFIER] Omitiendo búsqueda web (requiere_busqueda_web=False) para: '{query}'")
             continue
@@ -113,26 +108,31 @@ def retriever_node(state: AgentState) -> Dict[str, Any]:
     items = state.get("items", [])
     
     for item in items:
-        if item.get("categoria_dominio") == "RECHAZADO":
-            logger.info(f"[RETRIEVER] Omitiendo búsqueda RAG para ítem rechazado: '{item['original_query']}'")
-            continue
-        
         main_noun = normalizar_texto(item.get("sustantivo_principal", ""))
         main_noun_synonyms = {main_noun}
         if main_noun in SYNONYM_MAP:
             for syn in SYNONYM_MAP[main_noun]:
                 main_noun_synonyms.add(syn)
 
+        def stem_w(w):
+            w = w.lower()
+            if len(w) > 3 and w.endswith("es"): return w[:-2]
+            if len(w) > 3 and w.endswith("s"): return w[:-1]
+            return w
+
         lexical_tokens = set()
+        palabras_ruido_desambiguacion = {"destinado", "aplicacion", "industria", "rubro", "sistemas", "uso", "para", "tipo", "ejemplo"}
         for eq in item["expanded_queries"]:
             tokens = obtener_tokens_clave(eq)
             for t in tokens:
                 norm_t = normalizar_texto(t)
-                if norm_t not in EXCLUDED_BOOST_KEYWORDS and len(norm_t) > 2:
+                if norm_t not in EXCLUDED_BOOST_KEYWORDS and norm_t not in palabras_ruido_desambiguacion and len(norm_t) > 2:
                     lexical_tokens.add(norm_t)
+                    lexical_tokens.add(stem_w(norm_t))
                     if norm_t in SYNONYM_MAP:
                         for syn in SYNONYM_MAP[norm_t]:
                             lexical_tokens.add(syn)
+                            lexical_tokens.add(stem_w(syn))
                 
         candidates_dict = {}
         if cb.model is not None:
@@ -263,14 +263,20 @@ def retriever_node(state: AgentState) -> Dict[str, Any]:
                             "metadata": cb.metadata[prod_id]
                         }
                     
-        # --- LIMPIEZA FINAL DE CLASES NO PERMITIDAS ---
+        # --- LIMPIEZA FINAL DE CLASES NO PERMITIDAS Y PENALIZACIÓN DIDÁCTICA ---
         if allowed_prefixes:
             for pid in list(candidates_dict.keys()):
                 pid_str = str(pid)
                 if not any(pid_str.startswith(prefix) for prefix in allowed_prefixes):
                     del candidates_dict[pid]
-                    
+
         cands = list(candidates_dict.values())
+        for c in cands:
+            full_text_lower = (c["nombre_producto"] + " " + c["ruta_jerarquica"]).lower()
+            # Si el producto o su jerarquía pertenece a didácticos/juguetes/enseñanza y no se solicitó explícitamente
+            if any(w in full_text_lower for w in ["didactico", "didáctica", "enseñanza", "juguetes", "juegos"]) and "didactico" not in q_clean.lower():
+                c["score_percentage"] -= 500.0
+
         cands.sort(key=lambda x: x["score_percentage"], reverse=True)
         item["candidates"] = cands[:8]
         

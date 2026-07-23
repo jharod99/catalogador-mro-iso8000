@@ -57,7 +57,12 @@ SYNONYM_MAP = {
     "soplador": ["ventilador", "fan", "blower", "extractor"],
     "impresora": ["printer", "etiquetadora", "rotuladora", "rotulador"],
     "printer": ["impresora", "etiquetadora", "rotuladora", "rotulador"],
-    "etiquetadora": ["impresora", "printer", "rotuladora", "rotulador"]
+    "etiquetadora": ["impresora", "printer", "rotuladora", "rotulador"],
+    "refrigeracion": ["enfriamiento", "enfriador", "chiller", "radiador", "intercambiador", "disipador"],
+    "refrigeración": ["enfriamiento", "enfriador", "chiller", "radiador", "intercambiador", "disipador"],
+    "enfriamiento": ["refrigeracion", "enfriador", "chiller", "radiador", "intercambiador", "disipador"],
+    "chiller": ["enfriador", "refrigeracion", "intercambiador"],
+    "radiador": ["enfriador", "refrigeracion", "intercambiador"]
 }
 
 NOUN_CLASS_MAPPING = {
@@ -66,6 +71,8 @@ NOUN_CLASS_MAPPING = {
     "tuerca": ["311617"],
     "arandela": ["311618"],
     "tuberia": ["401715", "4017", "4018"],
+    "tubo": ["401715", "4017", "4018", "401416"],
+    "tubos": ["401715", "4017", "4018", "401416"],
     "celular": ["431915"],
     "telefono": ["431915"],
     "teléfono": ["431915"],
@@ -105,7 +112,15 @@ NOUN_CLASS_MAPPING = {
     "soplador": ["401016"],
     "impresora": ["432121"],
     "printer": ["432121"],
-    "etiquetadora": ["432121"]
+    "etiquetadora": ["432121"],
+    "refrigeracion": ["401017", "401018", "251726", "321310", "432015"],
+    "refrigeración": ["401017", "401018", "251726", "321310", "432015"],
+    "enfriamiento": ["401017", "401018", "251726", "321310", "432015"],
+    "radiador": ["401018", "251726", "251918"],
+    "chiller": ["401017"],
+    "disipador": ["321310", "432015"],
+    "motor": ["261011", "261012", "2610"],
+    "motores": ["261011", "261012", "2610"]
 }
 
 MARCAS_COMUNES = ["HUAWEI", "APPLE", "LENOVO", "CATERPILLAR", "SKF", "DEMTECH", "DELL", "HP", "SIEMENS", "ABB", "FESTO", "SMC", "ZEBRA", "SAMSUNG", "WD", "WESTERN DIGITAL", "KINGSTON", "CRUCIAL", "SWAGELOK", "SAB", "XIAOMI"]

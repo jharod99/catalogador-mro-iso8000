@@ -3,27 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInput = document.getElementById('user-input');
     const chatMessages = document.getElementById('chat-messages');
     const sendBtn = document.getElementById('send-btn');
-    const resetBtn = document.getElementById('reset-btn'); // Botón para resetear carrito
 
-    if(resetBtn) {
-        resetBtn.addEventListener('click', async () => {
-            setLoadingState(true);
-            try {
-                await fetch('/api/classify', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ query: 'reset', reset_session: true })
-                });
-                chatMessages.innerHTML = ''; // Limpiar chat
-                appendMessage('bot', '🛒 He vaciado tu carrito. ¿Qué productos necesitas cotizar ahora?');
-            } catch(e) {
-                console.error(e);
-            }
-            setLoadingState(false);
-        });
-    }
 
-    async function sendChatMessage(queryText, showInChat = true) {
+    async function sendChatMessage(queryText, showInChat = true, isOptionSelection = false) {
         if (!queryText) return;
         setLoadingState(true);
 
@@ -36,7 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/classify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: queryText })
+                body: JSON.stringify({ 
+                    query: queryText,
+                    is_new_query: !isOptionSelection
+                })
             });
 
             if (!response.ok) throw new Error('Error en el servidor');
@@ -52,6 +37,26 @@ document.addEventListener('DOMContentLoaded', () => {
             setLoadingState(false);
         }
     }
+
+    window.sendOptionSelection = function(queryText, originalProduct, btnElement) {
+        // Deshabilitar todos los botones de opciones para evitar clics dobles
+        const allOptionBtns = document.querySelectorAll('.option-choice-btn');
+        allOptionBtns.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+            btn.style.pointerEvents = 'none';
+        });
+
+        if (btnElement) {
+            btnElement.style.opacity = '1';
+            btnElement.style.border = '2px solid #38bdf8';
+        }
+
+        const baseQuery = originalProduct || window.lastQuery || '';
+        const fullContext = baseQuery ? `${baseQuery} destinado a: ${queryText}` : `Producto destinado a: ${queryText}`;
+        sendChatMessage(fullContext, true, true);
+    };
 
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -133,89 +138,56 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.estado === 'Alta' && data.items) {
             let itemsList = data.items.map(i => {
                 return `
-                <div class="item-card glass-panel">
-                    <div class="item-header">
-                        <span class="badge success">Clasificado</span>
-                        <span class="item-code">${i.codigo_exacto}</span>
+                <div class="item-card glass-panel" style="padding: 16px; border-left: 4px solid var(--accent-light, #10b981); margin-bottom: 10px;">
+                    <div class="item-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span class="badge success" style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 4px 10px; borderRadius: 6px; font-weight: 600; font-size: 12px;">CÓDIGO UNSPSC</span>
+                        <span class="item-code" style="font-family: monospace; font-size: 18px; font-weight: 700; color: #38bdf8;">${i.codigo_exacto}</span>
                     </div>
                     <div class="item-body">
-                        <h4>${i.nombre_producto}</h4>
-                        <p class="hierarchy">${i.ruta_jerarquica.replace(/->/g, '›')}</p>
-                        <div class="one-line-spec">
-                            <span class="spec-label">Spec:</span>
-                            <code>${i.one_line_desc || 'Generando...'}</code>
-                        </div>
+                        <h4 style="margin: 4px 0 8px 0; font-size: 16px; color: #f8fafc;">${i.nombre_producto}</h4>
+                        <p class="hierarchy" style="font-size: 13px; color: #94a3b8; line-height: 1.4; margin: 0;">${i.ruta_jerarquica.replace(/->/g, ' › ')}</p>
                     </div>
                 </div>`;
             }).join('');
 
             contentHTML = `
                 <div class="message-content" style="width: 100%; max-width: 800px;">
-                    <p class="success-text">He procesado tu canasta. Aquí están los códigos listos para tu orden de compra:</p>
+                    <p class="success-text" style="font-weight: 600; color: #38bdf8; margin-bottom: 12px;">✅ Código UNSPSC Identificado:</p>
                     <div class="items-grid">
                         ${itemsList}
                     </div>
-                    <button class="copy-all-btn glass-btn" onclick="copyAllSpecs()">📋 Copiar Especificaciones</button>
                 </div>
             `;
         } else if (data.estado === 'Ambig\u00fcedad' || data.estado === 'Baja') {
-            let itemsHTML = '';
-            if (data.items && data.items.length > 0) {
-                itemsHTML = data.items.map((item, itemIdx) => {
-                    let fieldsHTML = '';
-                    if (!item.atributos_faltantes || item.atributos_faltantes.length === 0) {
-                        fieldsHTML = `
-                            <div class="form-field" data-atributo="modelo_o_especificacion" data-tipo="texto">
-                                <label>ESPECIFICACIÓN / DETALLES:</label>
-                                <div class="text-input-container">
-                                    <input type="text" placeholder="Ingrese el modelo o especificaciones adicionales..." class="field-text-input" onkeydown="if(event.key==='Enter') { event.preventDefault(); submitCardAclaraciones(this, '${item.sustantivo_principal}'); }" />
-                                </div>
-                            </div>`;
-                    } else {
-                        fieldsHTML = item.atributos_faltantes.map(field => {
-                            let fieldHTML = '';
-                            if (field.tipo_interfaz === 'botones' && field.opciones) {
-                                let buttons = field.opciones.map(opt => {
-                                    return `<button class="option-chip" data-value="${opt}" onclick="selectChip(this)">${opt}</button>`;
-                                }).join('');
-                                fieldHTML = `
-                                    <div class="form-field" data-atributo="${field.atributo}" data-tipo="botones">
-                                        <label>${field.atributo.replace(/_/g, ' ').toUpperCase()}:</label>
-                                        <div class="option-chips-container">${buttons}</div>
-                                    </div>`;
-                            } else if (field.tipo_interfaz === 'texto') {
-                                fieldHTML = `
-                                    <div class="form-field" data-atributo="${field.atributo}" data-tipo="texto">
-                                        <label>${field.atributo.replace(/_/g, ' ').toUpperCase()}:</label>
-                                        <div class="text-input-container">
-                                            <input type="text" placeholder="${field.placeholder || ''}" class="field-text-input" onkeydown="if(event.key==='Enter') { event.preventDefault(); submitCardAclaraciones(this, '${item.sustantivo_principal}'); }" />
-                                        </div>
-                                    </div>`;
-                            }
-                            return fieldHTML;
-                        }).join('');
-                    }
-
-                    return `
-                        <div class="clarification-card glass-panel" id="card-${itemIdx}">
-                            <h4>${item.original_query}</h4>
-                            ${(item.atributos_faltantes && item.atributos_faltantes.length > 0) ? '' : `<p class="item-question">${item.pregunta_aclaratoria}</p>`}
-                            <div class="form-fields">${fieldsHTML}</div>
-                            <div class="card-actions" style="margin-top: 15px; text-align: right;">
-                                <button class="confirm-card-btn glass-btn" onclick="submitCardAclaraciones(this, '${item.sustantivo_principal}')">✓ Confirmar</button>
-                            </div>
-                        </div>`;
+            let optionsButtonsHTML = '';
+            const opcionesList = data.opciones || (data.items && data.items[0] && data.items[0].opciones ? data.items[0].opciones : []);
+            if (opcionesList && opcionesList.length > 0) {
+                const currentOrigQuery = (data.items && data.items[0] && data.items[0].original_query) ? data.items[0].original_query : (window.lastQuery || '');
+                const safeOrig = currentOrigQuery.replace(/'/g, "\\'");
+                
+                let buttons = opcionesList.map(opt => {
+                    const title = typeof opt === 'string' ? opt : (opt.titulo || opt.nombre || JSON.stringify(opt));
+                    const desc = typeof opt === 'object' && opt.descripcion ? `<span style="display:block; font-size:12px; opacity:0.8; margin-top:2px;">${opt.descripcion}</span>` : '';
+                    const safeTitle = title.replace(/'/g, "\\'");
+                    return `<button class="glass-btn option-choice-btn" style="margin: 6px 0; padding: 12px 16px; text-align: left; display: block; width: 100%; cursor: pointer;" onclick="window.sendOptionSelection('${safeTitle}', '${safeOrig}', this)">
+                        <strong>👉 ${title}</strong>
+                        ${desc}
+                    </button>`;
                 }).join('');
+
+                optionsButtonsHTML = `<div class="options-container glass-panel" style="margin-top: 12px; padding: 12px;">
+                    <p style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--accent-light, #3b82f6);">Selecciona una opción para clasificar directamente:</p>
+                    ${buttons}
+                </div>`;
             }
 
             contentHTML = `
                 <div class="message-content" style="width: 100%; max-width: 600px;">
-                    ${(data.items && data.items.length > 0) ? '' : `
                     <div class="question-card glass-panel alert">
                         <div class="icon-pulse">🤔</div>
-                        <p>${data.mensaje.replace(/\n/g, '<br>')}</p>
-                    </div>`}
-                    ${itemsHTML}
+                        <p>${(data.mensaje || 'Por favor, elige una de las opciones para clasificar el producto:').replace(/\n/g, '<br>')}</p>
+                    </div>
+                    ${optionsButtonsHTML}
                 </div>
             `;
         } else if (data.estado === 'Rechazado') {

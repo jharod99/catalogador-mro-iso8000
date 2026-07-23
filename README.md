@@ -1,6 +1,6 @@
-﻿# Catalogador MRO — Asistente de Compras ISO 8000
+# Catalogador UNSPSC — Asistente de Clasificación de Compras
 
-Sistema de clasificación semántica multi-agente para requisiciones técnicas de Mantenimiento, Reparación y Operaciones (MRO). Toma requerimientos en lenguaje libre, clasifica cada ítem en el catálogo **UNSPSC** (49,000 clases) y genera una **descripción estandarizada ISO 8000** en una sola línea, lista para ERP o solicitud de cotización a proveedores.
+Sistema de clasificación semántica multi-agente para requisiciones técnicas de compras y abastecimiento. Toma requerimientos en lenguaje libre, desambigua categorías ambiguas de forma interactiva y asigna el código **UNSPSC** (8 dígitos) de 17,000+ ítems con cobertura universal.
 
 ---
 
@@ -8,95 +8,58 @@ Sistema de clasificación semántica multi-agente para requisiciones técnicas d
 
 ### 1. Grafo LangGraph Puro (`core/graph.py`)
 
-Representación fiel y exacta del `StateGraph` compilado. Muestra los nodos de LangGraph, sus puntos de entrada/salida y las funciones de arista condicional (`route_cache`, `route_decision`), así como la capa externa de post-procesamiento en `clasificar_con_agente()`.
+Representación del `StateGraph` compilado de LangGraph (`cache` -> `extractor` -> `market_verifier` -> `retriever` -> `decision_maker` -> `END`).
 
 ![LangGraph StateGraph puro](docs/langgraph_puro.png)
 
 ---
 
-### 2. Flujo Completo del Sistema y Lógica de Nodos
+## 2. Flujo Completo del Sistema y Lógica de Nodos
 
-Detalle paso a paso de lo que ocurre **dentro** de cada nodo (extracción con LLM, salvaguardas por sustantivo, verificación en DuckDuckGo, búsqueda RAG en FAISS con boosting, auditoría paramétrica ISO 8000 y formateo posicional determinista en Python por familia):
-
-![Flujo completo del sistema MRO](docs/flujo_sistema.png)
+![Flujo completo del sistema](docs/flujo_sistema.png)
 
 ---
 
 ## ⚙️ Arquitectura Modular
 
-El sistema está orquestado con **LangGraph** y una cascada de múltiples LLMs con fallback automático. Todo el backend de IA reside en el directorio `core/`:
+El sistema está orquestado con **LangGraph** y una cascada de múltiples LLMs con fallback automático (`Groq`, `OpenRouter`, `DeepSeek`, `SiliconFlow`, `Mistral`, `Gemini`):
 
 ```text
 Proyecto Alura/
-├── app.py                        # Servidor Flask (punto de entrada)
+├── app.py                        # Servidor Flask (API /api/classify)
+├── database.py                   # Gestor de base de datos SQLite local
+├── golden_record.json            # Caché persistente de respuestas verificadas
 ├── core/
-│   ├── graph.py                  # Definición del StateGraph (LangGraph)
+│   ├── graph.py                  # Grafo de agentes LangGraph
 │   ├── state.py                  # Esquemas de datos (AgentState, ProductItem)
 │   ├── models.py                 # Cascada de LLMs con fallback automático
-│   ├── config.py                 # Sinónimos, marcas, diámetros comerciales
+│   ├── config.py                 # Sinónimos, reglas léxicas y NOUN_CLASS_MAPPING
 │   ├── rag/
-│   │   └── faiss_engine.py       # Motor de búsqueda FAISS + keyword boosting
+│   │   └── faiss_engine.py       # Búsqueda vectorial FAISS + Índice léxico
 │   ├── nodes/
-│   │   ├── cache.py              # Golden Record (caché persistente JSON)
-│   │   ├── extraction.py         # Extractor de entidades (Llama 3.3)
-│   │   ├── retrieval.py          # Verificador web + RAG FAISS
-│   │   └── decision.py           # Auditor ISO 8000 + Generador posicional
+│   │   ├── cache.py              # Búsqueda en Golden Record
+│   │   ├── extraction.py         # Extractor dinámico y bypass de aclaraciones
+│   │   ├── retrieval.py          # Verificador web y RAG FAISS
+│   │   └── decision.py           # Gatekeeper de ambigüedad y asignación de código
 │   └── prompts/
-│       └── templates.py          # Prompts del extractor, decisor y generador
-├── data/                         # Índice FAISS + metadatos UNSPSC
-├── docs/
-│   ├── flujo_sistema.mmd         # Fuente Mermaid del diagrama del sistema
-│   ├── flujo_sistema.png         # Renderizado PNG del flujo del sistema
-│   ├── langgraph_puro.mmd        # Fuente Mermaid del diagrama LangGraph
-│   └── langgraph_puro.png        # Renderizado PNG del grafo LangGraph
-├── static/ & templates/          # Frontend (chat UI)
+│       └── templates.py          # Prompts con Leyes de Desambiguación
+├── data/                         # Base de datos SQLite + Vectores FAISS (17k UNSPSC)
+├── static/ & templates/          # Interfaz de usuario Web (HTML/JS/CSS)
 ├── Dockerfile & docker-compose.yml
 └── run.bat / run.sh
 ```
 
 ---
 
-## 🧠 Nodos del Grafo
+## 🧠 Leyes y Salvaguardas de Clasificación
 
-| # | Nodo Registrado | Función Interna | Salida / Decisiones |
-|---|---|---|---|
-| 1 | `cache` | Busca coincidencia en `golden_record.json` | `estado_global = Alta` (Hit) o `Baja` (Miss) |
-| 2 | `extractor` | Expande jergas/abrevs. Extrae ítems con Llama 3.3. Filtra especialidad. | Lista de `items` con `categoria_dominio` |
-| 3 | `market_verifier` | Evalúa si requiere contexto de mercado y consulta DuckDuckGo (caché SQLite). | `market_context` inyectado en cada ítem |
-| 4 | `retriever` | Búsqueda vectorial FAISS (49k UNSPSC) + Keyword boosting léxico. | Top-8 candidatos por ítem |
-| 5 | `decision_maker` | Auditoría ISO 8000 con Claude 3.5. Evalúa P/N, conflictos y datos faltantes. | `estado_global` (`Alta`, `Ambigüedad`, `Baja`) |
-| 6 | `generator` | Genera descripción con LLM y aplica formatters posicionales deterministas en Python. | `one_line_desc` limpia en MAYÚSCULAS |
-
----
-
-## 🏭 Familias Soportadas
-
-| Familia | Sustantivos | Estructura ISO 8000 de Salida |
-|---|---|---|
-| **Fluidos / Hidráulica** | TUBERIA, VALVULA, BRIDA, CODO, NIPLE, FITTING | `TUBERIA [MAT], [DIAM], SCH [N], [NORMA], [EXTREMOS], [LONGITUD]` |
-| **Cómputo / TI** | SMARTPHONE, LAPTOP, MEMORIA, DISCO, IMPRESORA | `SMARTPHONE [MARCA] [MODELO], [GB], [GB RAM], [RED], [COLOR]` |
-| **Instrumentación / Eléctrica** | MOTOR, CAUDALIMETRO, TRANSMISOR, INTERRUPTOR | `MOTOR ELÉCTRICO [HP], [V], [FASES], [RPM], [HZ], CARCASA [N]` |
-
----
-
-## 🛡️ Salvaguardas Críticas
-
-| Salvaguarda | Descripción |
+| Regla / Ley | Descripción |
 |---|---|
-| **Filtro duro de P/N** | Si el usuario provee un P/N unívoco, clasifica directamente sin solicitar más atributos. |
-| **Bypass de modelo comercial** | Para modelos específicos (Samsung 990 Pro, Galaxy A54), omite preguntas de datasheet. |
-| **Deducción de RPM** | Con Hz y polos deduce `RPM = (120 × f) / p` y norma NEMA/IEC automáticamente. |
-| **Conflicto geométrico** | Detecta incompatibilidades físicas (ej: SSD 990 Pro + M.2 2242) y solicita corrección. |
-| **Coherencia norma-material** | Las opciones de norma solo incluyen estándares compatibles con el material declarado. |
-| **Anti-fricción infinita** | Prohíbe solicitar clase de eficiencia, certificación adicional u otros atributos secundarios que no afectan la compra. |
-| **Golden Record** | Cada ítem clasificado se cachea. Consultas repetidas se resuelven sin LLM. |
-
----
-
-## 🔁 Cascada de Fallback LLM
-
-- **Extractor / Generador**: `Groq` → `DeepSeek` → `SiliconFlow` → `Mistral` → `Gemini`
-- **Decisor / Auditor**: `OpenRouter (Claude)` → `DeepSeek` → `Groq` → `SiliconFlow` → `Mistral` → `Gemini`
+| **Regla de Ceguera Temporal (Blind Spot)** | Durante la evaluación de ambigüedad, se prohíbe mirar el catálogo antes de evaluar la lógica de contexto. |
+| **Ley de Auto-Contexto** | Si los atributos (ej. *procesador i9*, *monitor 27"*) ya ubican el producto en una industria (ej. TI), se salta la desambiguación y asigna el código en 1 solo paso. |
+| **Ley de la Máquina Destino** | Si el usuario menciona la máquina/equipo destino (ej. *para faja transportadora*, *para aire acondicionado*), no se le vuelve a preguntar; se asigna directamente. |
+| **Ley de Servicios e Intangibles** | Software, alojamiento cloud, licencias y servicios de TI mantienen su código UNSPSC sin importar la industria compradora. Se clasifican de inmediato. |
+| **Bypass Determinista (<5ms)** | Al hacer clic en una opción de la web UI, el sistema invalida los clics dobles y entrega el código UNSPSC exacto instantáneamente sin bucles. |
 
 ---
 
@@ -104,15 +67,10 @@ Proyecto Alura/
 
 ### Windows
 ```cmd
-run.bat
+python app.py
 ```
 
-### macOS / Linux
-```bash
-chmod +x run.sh && ./run.sh
-```
-
-### Docker (producción)
+### Docker
 ```bash
 docker-compose up -d --build
 ```
@@ -125,21 +83,17 @@ docker-compose up -d --build
 
 ```json
 // Request
-{ "query": "Válvula compuerta 6 IN clase 150 bridada acero al carbono con volante" }
+{ "query": "Estación de trabajo con procesador i9, monitor de 27 pulgadas, teclado y mouse" }
 
 // Response exitosa
 {
   "estado": "Alta",
-  "items": [{
-    "codigo_exacto": 40141616,
-    "nombre_producto": "Válvulas de compuerta",
-    "one_line_desc": "VALVULA COMPUERTA 6 IN, CL150, BRIDADA, CUERPO ASTM A216 WCB, DISCO ACERO AL CARBONO, ASIENTO LATÓN, CON VOLANTE, API 600",
-    "criticidad": "Media",
-    "requiere_revision_humana": false
-  }]
+  "data": {
+    "codigo_unspsc": "43211515",
+    "descripcion_oficial": "Estaciones de trabajo para computadores",
+    "jerarquia": "Difusión de Tecnologías de Información y Telecomunicaciones -> Equipo informático y accesorios -> Computadores"
+  }
 }
-```
-
 ---
 
 ## 📄 Variables de Entorno (`.env`)

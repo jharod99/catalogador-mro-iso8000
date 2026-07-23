@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>UNSPSC Chatbot - Experto Compras</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <!-- Estilos de la aplicación -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=9999">
 </head>
 <body>
     <div class="app-container">
@@ -27,24 +30,16 @@
             <div class="sidebar-content">
                 <div class="info-card">
                     <h3>¿Cómo te ayudo?</h3>
-                    <p>Clasifico tus requerimientos de compra bajo el estándar <strong>UNSPSC</strong> y estructuro sus especificaciones técnicas comerciales.</p>
+                    <p>Identifico el código exacto <strong>UNSPSC</strong> para cualquier descripción de producto que ingreses.</p>
                 </div>
                 
                 <div class="info-card">
-                    <h3>Familias Especializadas</h3>
+                    <h3>Catálogo Universal UNSPSC</h3>
                     <p style="font-size: 13px; line-height: 1.8;">
-                        • 🔧 <strong>Fluidos e Hidráulica</strong><br>&nbsp;&nbsp;&nbsp;&nbsp;(Tuberías, válvulas, acoples, bridas)<br>
-                        • 💻 <strong>Cómputo y TI</strong><br>&nbsp;&nbsp;&nbsp;&nbsp;(Laptops, celulares, servidores, discos)<br>
-                        • ⚡ <strong>Equipos Eléctricos</strong><br>&nbsp;&nbsp;&nbsp;&nbsp;(Motores, sensores, caudalímetros)
+                        • 🌐 <strong>Todas las Categorías</strong><br>&nbsp;&nbsp;&nbsp;&nbsp;(Mantenimiento, Herramientas, TI, Salud, Oficina, Químicos, Eléctricos)<br>
+                        • ⚡ <strong>Protocolo Cero Suposiciones</strong><br>&nbsp;&nbsp;&nbsp;&nbsp;(Desambiguación industrial directa)
                     </p>
                 </div>
-                
-                <button id="reset-btn" class="glass-btn" style="margin-top:auto;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
-                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                    Vaciar Carrito (Reset)
-                </button>
             </div>
         </aside>
 
@@ -52,8 +47,8 @@
         <main class="chat-container">
             <header class="chat-header">
                 <div>
-                    <h1>Asistente de Adquisiciones</h1>
-                    <p>Mapeo inteligente y generación de especificaciones técnicas.</p>
+                    <h1>Clasificador UNSPSC</h1>
+                    <p>Identificación precisa del código UNSPSC de 8 dígitos para tus requerimientos.</p>
                 </div>
             </header>
 
@@ -65,7 +60,7 @@
                         </svg>
                     </div>
                     <div class="message-content">
-                        <p>👋 ¡Hola! Soy tu asistente de compras especializado. Escribe los insumos o equipos que necesitas cotizar (puedes ingresar varios a la vez, ej: <em>"Válvula de bola de 2 pulgadas y su actuador"</em>) y te ayudaré a clasificarlos y generar sus especificaciones.</p>
+                        <p>👋 ¡Hola! Escribe cualquier producto, insumo o equipo que necesites clasificar (ej: <em>"Silla ergonómica"</em>, <em>"Sistema de refrigeración líquida"</em> o <em>"Válvula"</em>) y te entregaré su código UNSPSC exacto. Si hay ambigüedad, te mostraré opciones directas para desambiguar.</p>
                     </div>
                 </div>
             </div>
@@ -91,6 +86,6 @@
     </div>
 
     <!-- Scripts de la aplicación -->
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="{{ url_for('static', filename='app.js') }}?v=100000"></script>
 </body>
 </html>

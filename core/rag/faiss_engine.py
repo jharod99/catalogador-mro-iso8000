@@ -15,10 +15,16 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
 faiss.omp_set_num_threads(1)             # Force FAISS to use a single thread to prevent Windows Errno 22
+import unicodedata
+
+def normalizar_texto(text: str) -> str:
+    text = text.lower()
+    text = "".join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
+    return text
 
 def obtener_tokens_clave(query):
-    q = query.lower()
-    q = re.sub(r'[^a-zA-Z\u00C0-\u017F\s]', ' ', q)
+    q = normalizar_texto(query)
+    q = re.sub(r'[^a-z0-9\s]', ' ', q)
     
     # Únicamente stopwords funcionales en español
     stopwords = {'de', 'para', 'con', 'en', 'un', 'una', 'el', 'la', 'los', 'las', 'y', 'o', 'a', 'del', 'x', 'e', 'd', 'c', 'm'}
@@ -64,7 +70,7 @@ def obtener_tokens_clave(query):
 
 def limpiar_consulta(query):
     # Limpieza básica para el modelo de embeddings
-    q = query.lower()
+    q = normalizar_texto(query)
     
     translations = {
         r'\bworkstation\b': 'estaciones de trabajo para computadores',
@@ -511,10 +517,22 @@ def get_chatbot():
         import re
         _chatbot.inverted_index = {}
         print("Precomputando índice invertido de productos para búsqueda léxica ultra-rápida...")
+        
+        def stem_w(w):
+            w = w.lower()
+            if len(w) > 3 and w.endswith("es"): return w[:-2]
+            if len(w) > 3 and w.endswith("s"): return w[:-1]
+            return w
+
         for prod_id, meta in _chatbot.metadata.items():
             prod_text = f"{meta['nombre_producto']} {meta['nombre_clase']} {meta['nombre_familia']}"
             prod_text_norm = normalizar_texto(prod_text)
-            words = set(re.findall(r'[a-z0-9]+', prod_text_norm))
+            raw_words = set(re.findall(r'[a-z0-9]+', prod_text_norm))
+            words = set()
+            for w in raw_words:
+                words.add(w)
+                words.add(stem_w(w))
+                
             for w in words:
                 if len(w) > 2:
                     if w not in _chatbot.inverted_index:

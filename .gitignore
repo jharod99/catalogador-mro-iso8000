@@ -33,3 +33,6 @@ Thumbs.db
 
 # Datos descargados en runtime
 data/duckduckgo_cache.db
+
+scripts_legacy/Clave API.txt
+data/debug_prompt.txt
