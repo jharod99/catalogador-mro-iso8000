@@ -24,7 +24,8 @@ def extractor_node(state: AgentState) -> Dict[str, Any]:
     if not messages:
         return {"items": []}
     
-    ultimo_mensaje = messages[-1]["content"] if messages else ""
+    last_msg = messages[-1] if messages else ""
+    ultimo_mensaje = last_msg.get("content", "") if isinstance(last_msg, dict) else str(last_msg)
 
     # Detectar si la entrada ya es una aclaración unificada (contiene 'destinado a:' o 'para:')
     es_aclaracion = "destinado a:" in ultimo_mensaje.lower() or "para:" in ultimo_mensaje.lower()

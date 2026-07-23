@@ -65,8 +65,11 @@ def clasificar_con_agente(messages: List[Dict[str, str]]) -> Dict[str, Any]:
         try:
             user_query = None
             for m in reversed(messages):
-                if m.get("role") == "user":
-                    user_query = m.get("content")
+                if isinstance(m, str) and m.strip():
+                    user_query = m.strip()
+                    break
+                elif isinstance(m, dict) and m.get("role") == "user":
+                    user_query = m.get("content", "").strip()
                     break
             if user_query:
                 logger.info(f"[FALLBACK] Iniciando clasificación local offline para: '{user_query}'...")

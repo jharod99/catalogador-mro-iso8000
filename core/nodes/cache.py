@@ -14,7 +14,10 @@ def cache_node(state: AgentState) -> Dict[str, Any]:
     # Obtener última consulta de usuario
     ultimo_mensaje = None
     for m in reversed(messages):
-        if m.get("role") == "user":
+        if isinstance(m, str) and m.strip():
+            ultimo_mensaje = m.strip()
+            break
+        elif isinstance(m, dict) and m.get("role") == "user":
             ultimo_mensaje = m.get("content", "").strip()
             break
             
