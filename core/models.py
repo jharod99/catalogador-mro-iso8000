@@ -79,12 +79,12 @@ except:
     ddgs = None
 
 
-DEFAULT_ORDER = ["groq", "openrouter", "deepseek", "siliconflow", "mistral", "gemini"]
+DEFAULT_ORDER = ["groq", "gemini", "openrouter", "deepseek", "siliconflow", "mistral"]
 
 def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperature: float = 0.1) -> str:
     """
     Llama a los LLMs en cascada según el orden provisto hasta obtener una respuesta exitosa.
-    Incluye un timeout de 12s por llamada para evitar congelamientos en el frontend.
+    Incluye un timeout ultrarrápido de 7s por llamada para evitar acumulación de latencia.
     """
     order = providers_order or DEFAULT_ORDER
     
@@ -96,19 +96,27 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
                     messages=[{"role": "user", "content": prompt}],
                     model="llama-3.3-70b-versatile",
                     temperature=temperature,
-                    timeout=12.0
+                    timeout=7.0
                 )
                 return response.choices[0].message.content
 
+            elif provider == "gemini" and gemini_client:
+                logger.info("Llamando a Gemini (gemini-2.5-flash)...")
+                response = gemini_client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt
+                )
+                return response.text
+
             elif provider == "openrouter" and openrouter_client:
                 logger.info("Llamando a OpenRouter...")
-                for or_model in ["meta-llama/llama-3.3-70b-instruct", "google/gemini-2.5-flash", "anthropic/claude-3.5-sonnet"]:
+                for or_model in ["google/gemini-2.5-flash", "meta-llama/llama-3.3-70b-instruct", "anthropic/claude-3.5-sonnet"]:
                     try:
                         response = openrouter_client.chat.completions.create(
                             messages=[{"role": "user", "content": prompt}],
                             model=or_model,
                             temperature=temperature,
-                            timeout=12.0
+                            timeout=7.0
                         )
                         return response.choices[0].message.content
                     except Exception as e_or:
@@ -120,7 +128,7 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
                     messages=[{"role": "user", "content": prompt}],
                     model="deepseek-chat",
                     temperature=temperature,
-                    timeout=12.0
+                    timeout=7.0
                 )
                 return response.choices[0].message.content
                 
@@ -130,7 +138,7 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
                     messages=[{"role": "user", "content": prompt}],
                     model="deepseek-ai/DeepSeek-V3",
                     temperature=temperature,
-                    timeout=12.0
+                    timeout=7.0
                 )
                 return response.choices[0].message.content
                 
@@ -140,17 +148,9 @@ def llamar_llm_con_fallback(prompt: str, providers_order: list = None, temperatu
                     messages=[{"role": "user", "content": prompt}],
                     model="mistral-large-latest",
                     temperature=temperature,
-                    timeout=12.0
+                    timeout=7.0
                 )
                 return response.choices[0].message.content
-                
-            elif provider == "gemini" and gemini_client:
-                logger.info("Llamando a Gemini (gemini-2.5-flash)...")
-                response = gemini_client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt
-                )
-                return response.text
                 
         except Exception as e:
             logger.warning(f"Error en proveedor {provider}: {e}")
